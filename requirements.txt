@@ -1,0 +1,8 @@
+Pillow>=8.0
+imageio>=2.9
+numpy>=1.19
+opencv-contrib-python>=4.4.0
+opencv-python>=4.4.0
+imutils>=0.5
+dlib>=19.21
+pyinstaller>=4.3

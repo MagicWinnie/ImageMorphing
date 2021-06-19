@@ -1,0 +1,11 @@
+ImageMorphGUITK/
+__pycache__/
+.vscode/
+build/
+dist/
+*.gif
+*.dat
+*.exe
+*.zip
+*.spec
+AdvancedZoom.py
