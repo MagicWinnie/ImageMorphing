@@ -34,6 +34,9 @@ class GlobalVariables:
     DURATION = None
     REVERSED = True
 
+    CANVAS_1_POS = None
+    CANVAS_2_POS = None
+
     IMG_MAX_HEIGHT = 350
     IMG_MAX_WIDTH = 350
 
@@ -65,6 +68,8 @@ class MainWindow(Frame):
         self.initUI()
         self.initMenu()
         self.bindKeys()
+
+        self.drawPoints()
 
         self.detector = dlib.get_frontal_face_detector()
         try:
@@ -179,6 +184,9 @@ class MainWindow(Frame):
     def deletePtsList(self, *args):
         sel = self.points_list.curselection()
         for index in sel[::-1]:
+            if index in list(range(8)):
+                self.onWarn("Points # from 0 to 7 are immune!")
+                continue
             self.points_list.delete(index)
             self.GLOBAL_VARS.POINTS_1.pop(index)
             self.GLOBAL_VARS.POINTS_2.pop(index)
@@ -367,8 +375,8 @@ class MainWindow(Frame):
 
 
 
-    def reload_img_1_canvas(self):
-        temp_np_img = cv2.cvtColor(self.GLOBAL_VARS.IMAGE_1, cv2.COLOR_BGR2RGB)
+    def reload_img_1_canvas(self, img):
+        temp_np_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         if temp_np_img.shape[0] > temp_np_img.shape[1]:
             temp_np_img = image_resize(temp_np_img,  height=self.GLOBAL_VARS.IMG_MAX_HEIGHT)
@@ -382,8 +390,8 @@ class MainWindow(Frame):
         self.img_canvas_1.config(width=temp_np_img.shape[1] + 5, height=temp_np_img.shape[0] + 5)
         self.img_canvas_1.grid(row=1, column=0, sticky='news')
 
-    def reload_img_2_canvas(self):
-        temp_np_img = cv2.cvtColor(self.GLOBAL_VARS.IMAGE_2, cv2.COLOR_BGR2RGB)
+    def reload_img_2_canvas(self, img):
+        temp_np_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
         if temp_np_img.shape[0] > temp_np_img.shape[1]:
             temp_np_img = image_resize(temp_np_img,  height=self.GLOBAL_VARS.IMG_MAX_HEIGHT)
@@ -426,12 +434,73 @@ class MainWindow(Frame):
         else:
             self.after(int(self.GLOBAL_VARS.DURATION*1000), self.update_gif_viewer, ind)
 
+    def onImg1Click(self, event):
+        if self.GLOBAL_VARS.IMAGE_1 is None or self.GLOBAL_VARS.IMAGE_2 is None:
+            return
+        ratio_x = self.GLOBAL_VARS.IMAGE_1.shape[1]/self.img_canvas_1.winfo_width()
+        ratio_y = self.GLOBAL_VARS.IMAGE_1.shape[0]/self.img_canvas_1.winfo_height()
+        self.GLOBAL_VARS.CANVAS_1_POS = [int(event.x * ratio_x), int(event.y * ratio_y)]
+
+    def onImg2Click(self, event):
+        if self.GLOBAL_VARS.IMAGE_1 is None or self.GLOBAL_VARS.IMAGE_2 is None:
+            return
+        if self.GLOBAL_VARS.CANVAS_1_POS is None:
+            self.onError("You should firstly choose a point on the first image!")
+            return
+
+        ratio_x = self.GLOBAL_VARS.IMAGE_2.shape[1]/self.img_canvas_2.winfo_width()
+        ratio_y = self.GLOBAL_VARS.IMAGE_2.shape[0]/self.img_canvas_2.winfo_height()
+        self.GLOBAL_VARS.CANVAS_2_POS = [int(event.x * ratio_x), int(event.y * ratio_y)]
+
+        self.add2PtsList(self.GLOBAL_VARS.CANVAS_1_POS, self.GLOBAL_VARS.CANVAS_2_POS)
+
+        self.GLOBAL_VARS.CANVAS_1_POS = None
+        self.GLOBAL_VARS.CANVAS_2_POS = None
+        
+
+    def drawPoints(self):
+        sel = self.points_list.curselection()
+
+        if self.GLOBAL_VARS.IMAGE_1 is not None and self.GLOBAL_VARS.IMAGE_2 is not None:
+            temp_img_1 = self.GLOBAL_VARS.IMAGE_1.copy()
+            temp_img_2 = self.GLOBAL_VARS.IMAGE_2.copy()
+
+            if len(self.GLOBAL_VARS.POINTS_1) == len(self.GLOBAL_VARS.POINTS_2) and len(self.GLOBAL_VARS.POINTS_1) > 0:
+                for i in range(len(self.GLOBAL_VARS.POINTS_1)):
+                    if i in sel:
+                        temp_img_1 = cv2.circle(temp_img_1, tuple(self.GLOBAL_VARS.POINTS_1[i]), 10, (0, 0, 255), -1)
+                    else:
+                        temp_img_1 = cv2.circle(temp_img_1, tuple(self.GLOBAL_VARS.POINTS_1[i]), 10, (0, 255, 0), -1)
+
+                    temp_img_1 = cv2.circle(temp_img_1, tuple(self.GLOBAL_VARS.POINTS_1[i]), 12, (0, 0, 0), 2)
+
+                    if i in sel:
+                        temp_img_2 = cv2.circle(temp_img_2, tuple(self.GLOBAL_VARS.POINTS_2[i]), 10, (0, 0, 255), -1)
+                    else:
+                        temp_img_2 = cv2.circle(temp_img_2, tuple(self.GLOBAL_VARS.POINTS_2[i]), 10, (0, 255, 0), -1)
+
+                    temp_img_2 = cv2.circle(temp_img_2, tuple(self.GLOBAL_VARS.POINTS_2[i]), 12, (0, 0, 0), 2)
+
+            if self.GLOBAL_VARS.CANVAS_1_POS is not None:
+                temp_img_1 = cv2.circle(temp_img_1, tuple(self.GLOBAL_VARS.CANVAS_1_POS), 10, (255, 0, 0), -1)
+                temp_img_1 = cv2.circle(temp_img_1, tuple(self.GLOBAL_VARS.CANVAS_1_POS), 12, (0, 0, 0), 2)
+            if self.GLOBAL_VARS.CANVAS_2_POS is not None:
+                temp_img_2 = cv2.circle(temp_img_2, tuple(self.GLOBAL_VARS.CANVAS_2_POS), 10, (255, 0, 0), -1)
+                temp_img_2 = cv2.circle(temp_img_2, tuple(self.GLOBAL_VARS.CANVAS_2_POS), 12, (0, 0, 0), 2)
+
+            self.reload_img_1_canvas(temp_img_1)
+            self.reload_img_2_canvas(temp_img_2)
+
+        self.after(150, self.drawPoints)
+
     def reset_img_1_canvas(self):
         self.img_canvas_1 = Canvas(self,  width=self.GLOBAL_VARS.IMG_MAX_WIDTH ,  height=self.GLOBAL_VARS.IMG_MAX_HEIGHT)
+        self.img_canvas_1.bind('<Button-1>', self.onImg1Click)
         self.img_canvas_1.grid(row=1, column=0, sticky='news')
 
     def reset_img_2_canvas(self):
         self.img_canvas_2 = Canvas(self,  width=self.GLOBAL_VARS.IMG_MAX_WIDTH,  height=self.GLOBAL_VARS.IMG_MAX_HEIGHT)
+        self.img_canvas_2.bind('<Button-1>', self.onImg2Click)
         self.img_canvas_2.grid(row=1, column=1, sticky='news')
 
     def reset_gif_viewer(self):
@@ -478,7 +547,7 @@ class MainWindow(Frame):
                     return
                 
                 if self.GLOBAL_VARS.IMAGE_2 is None:
-                    self.reload_img_1_canvas()
+                    self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
                 else:
                     new_shape = (
                         max(self.GLOBAL_VARS.IMAGE_1.shape[0], self.GLOBAL_VARS.IMAGE_2.shape[0]),
@@ -488,10 +557,10 @@ class MainWindow(Frame):
                     self.GLOBAL_VARS.IMAGE_1 = resize(self.GLOBAL_VARS.IMAGE_1, new_shape, True)
                     self.GLOBAL_VARS.IMAGE_2 = resize(self.GLOBAL_VARS.IMAGE_2, new_shape, True)
 
-                    self.reload_img_1_canvas()
-                    self.reload_img_2_canvas()
+                    self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
+                    self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
 
-                    self.addCorners()    
+                    self.addCorners()
             elif args[0] == 2:
                 self.GLOBAL_VARS.IMAGE_2 = cv2.imread(str(filepath))
                 
@@ -508,7 +577,7 @@ class MainWindow(Frame):
 
 
                 if self.GLOBAL_VARS.IMAGE_1 is None:
-                    self.reload_img_2_canvas()
+                    self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
                 else:
                     new_shape = (
                         max(self.GLOBAL_VARS.IMAGE_1.shape[0], self.GLOBAL_VARS.IMAGE_2.shape[0]),
@@ -518,8 +587,8 @@ class MainWindow(Frame):
                     self.GLOBAL_VARS.IMAGE_1 = resize(self.GLOBAL_VARS.IMAGE_1, new_shape, True)
                     self.GLOBAL_VARS.IMAGE_2 = resize(self.GLOBAL_VARS.IMAGE_2, new_shape, True)
 
-                    self.reload_img_1_canvas()
-                    self.reload_img_2_canvas()
+                    self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
+                    self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
 
                     self.addCorners()
 
@@ -544,7 +613,7 @@ class MainWindow(Frame):
 
 
     def onAbout(self):
-        ABOUT_TEXT = "Image Morphing, v0.0.1\nBy Dmitriy Okoneshnikov, 2021\nVisit website: https://magicwinnie.github.io"
+        ABOUT_TEXT = "Image Morphing, v0.0.2\nBy Dmitriy Okoneshnikov, 2021\nVisit website: https://magicwinnie.github.io"
         self.onInfo(ABOUT_TEXT)
 
     def onExit(self, *args):
