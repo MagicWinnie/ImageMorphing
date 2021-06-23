@@ -73,7 +73,8 @@ class MainWindow(Frame):
 
         self.detector = dlib.get_frontal_face_detector()
         try:
-            self.predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
+            pwd = os.path.abspath(os.path.dirname(__file__))
+            self.predictor = dlib.shape_predictor(os.path.join(pwd, 'shape_predictor_68_face_landmarks.dat'))
         except:
             self.onError("Could not find the following file: 'shape_predictor_68_face_landmarks.dat'. Download the file and relaunch the app!")
             sys.exit(-1)
@@ -184,9 +185,9 @@ class MainWindow(Frame):
     def deletePtsList(self, *args):
         sel = self.points_list.curselection()
         for index in sel[::-1]:
-            if index in list(range(8)):
-                self.onWarn("Points # from 0 to 7 are immune!")
-                continue
+            # if index in list(range(8)):
+            #     self.onWarn("Points # from 0 to 7 are immune!")
+            #     continue
             self.points_list.delete(index)
             self.GLOBAL_VARS.POINTS_1.pop(index)
             self.GLOBAL_VARS.POINTS_2.pop(index)
@@ -429,7 +430,7 @@ class MainWindow(Frame):
             self.gif_canvas.grid(row=3, column=2, sticky='news')
         else:
             self.reset_gif_viewer()
-        if self.GLOBAL_VARS.DURATION is None or self.GLOBAL_VARS.DURATION == 0.0 :
+        if self.GLOBAL_VARS.DURATION is None or self.GLOBAL_VARS.DURATION == 0.0:
             self.after(150, self.update_gif_viewer, ind)
         else:
             self.after(int(self.GLOBAL_VARS.DURATION*1000), self.update_gif_viewer, ind)
@@ -437,8 +438,9 @@ class MainWindow(Frame):
     def onImg1Click(self, event):
         if self.GLOBAL_VARS.IMAGE_1 is None or self.GLOBAL_VARS.IMAGE_2 is None:
             return
-        ratio_x = self.GLOBAL_VARS.IMAGE_1.shape[1]/self.img_canvas_1.winfo_width()
-        ratio_y = self.GLOBAL_VARS.IMAGE_1.shape[0]/self.img_canvas_1.winfo_height()
+
+        ratio_x = self.GLOBAL_VARS.IMAGE_1.shape[1]/self.GLOBAL_VARS.TK_IMAGE_1.width()
+        ratio_y = self.GLOBAL_VARS.IMAGE_1.shape[0]/self.GLOBAL_VARS.TK_IMAGE_1.height()
         self.GLOBAL_VARS.CANVAS_1_POS = [int(event.x * ratio_x), int(event.y * ratio_y)]
 
     def onImg2Click(self, event):
@@ -448,8 +450,8 @@ class MainWindow(Frame):
             self.onError("You should firstly choose a point on the first image!")
             return
 
-        ratio_x = self.GLOBAL_VARS.IMAGE_2.shape[1]/self.img_canvas_2.winfo_width()
-        ratio_y = self.GLOBAL_VARS.IMAGE_2.shape[0]/self.img_canvas_2.winfo_height()
+        ratio_x = self.GLOBAL_VARS.IMAGE_2.shape[1]/self.GLOBAL_VARS.TK_IMAGE_2.width()
+        ratio_y = self.GLOBAL_VARS.IMAGE_2.shape[0]/self.GLOBAL_VARS.TK_IMAGE_2.height()
         self.GLOBAL_VARS.CANVAS_2_POS = [int(event.x * ratio_x), int(event.y * ratio_y)]
 
         self.add2PtsList(self.GLOBAL_VARS.CANVAS_1_POS, self.GLOBAL_VARS.CANVAS_2_POS)
@@ -541,7 +543,7 @@ class MainWindow(Frame):
                     self.onError("Could not open the image!")
                     self.reset_img_1_canvas()
                     return
-                if self.GLOBAL_VARS.IMAGE_1.shape[0] > 4000 or self.GLOBAL_VARS.IMAGE_1.shape[1] > 4000:
+                if self.GLOBAL_VARS.IMAGE_1.shape[0] > 6000 or self.GLOBAL_VARS.IMAGE_1.shape[1] > 6000:
                     self.onError("One of the dimensions of the first image is larger than 4000 px.\nThis can lead to serious memory problems.\nReverting...")
                     self.reset_img_1_canvas()
                     return
@@ -569,7 +571,7 @@ class MainWindow(Frame):
 
                     self.reset_img_2_canvas()
                     return
-                if self.GLOBAL_VARS.IMAGE_2.shape[0] > 4000 or self.GLOBAL_VARS.IMAGE_2.shape[1] > 4000:
+                if self.GLOBAL_VARS.IMAGE_2.shape[0] > 6000 or self.GLOBAL_VARS.IMAGE_2.shape[1] > 6000:
                     self.onError("One of the dimensions of the second image is larger than 4000 px.\nThis can lead to serious memory problems.\nReverting...")
 
                     self.reset_img_2_canvas()
