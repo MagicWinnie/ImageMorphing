@@ -1,7 +1,7 @@
 ### TO-DO:
 ### *Auto face cropping
 ### *Fix layout
-### *Auto scale size of points
+### *Split different kinds of points
 import os
 import sys
 import getpass
@@ -10,26 +10,14 @@ from pathlib import Path
 from copy import deepcopy
 from functools import partial
 
-
 import cv2
 import dlib
 import imageio
 from imutils import face_utils
 from PIL import Image, ImageTk
 
-from tkinter import BooleanVar, IntVar, Tk, Menu, Text, PhotoImage, Canvas, Listbox
-from tkinter import (
-    BOTH,
-    CURRENT,
-    INSERT,
-    FIRST,
-    END,
-    RIGHT,
-    Y,
-    LEFT,
-    VERTICAL,
-    HORIZONTAL,
-)
+from tkinter import BooleanVar, Tk, Menu, PhotoImage, Canvas, Listbox
+from tkinter import END, VERTICAL, HORIZONTAL
 from tkinter.ttk import Frame, Button, Scrollbar, Checkbutton, Entry, Label, Separator
 from tkinter import messagebox as mbox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
@@ -61,13 +49,10 @@ class GlobalVariables:
 
     if platform.system() == "Windows":
         LAST_OPEN_PATH = "C:\\Users\\{}\\Pictures".format(getpass.getuser())
-        LAST_SAVE_PATH = "C:\\Users\\{}\\Pictures".format(getpass.getuser())
     elif platform.system() == "Linux":
         LAST_OPEN_PATH = "/home/{}/Pictures".format(getpass.getuser())
-        LAST_SAVE_PATH = "/home/{}/Pictures".format(getpass.getuser())
     else:
         LAST_OPEN_PATH = ""
-        LAST_SAVE_PATH = ""
 
     IMAGES = []
     CURR_FRAME = None
@@ -770,8 +755,8 @@ class MainWindow(Frame):
             temp_img_1 = self.GLOBAL_VARS.IMAGE_1.copy()
             temp_img_2 = self.GLOBAL_VARS.IMAGE_2.copy()
 
-            size_big = 12
-            size_small = 10
+            size_big = max(5, temp_img_1.shape[1]//103)
+            size_small = max(3, temp_img_1.shape[1]//123)
 
             if (
                 len(self.GLOBAL_VARS.POINTS_1) == len(self.GLOBAL_VARS.POINTS_2)
@@ -1003,12 +988,12 @@ class MainWindow(Frame):
         filepath = asksaveasfilename(
             defaultextension="gif",
             filetypes=[("Graphics Interchange Format", "*.gif")],
-            initialdir=self.GLOBAL_VARS.LAST_SAVE_PATH,
+            initialdir=self.GLOBAL_VARS.LAST_OPEN_PATH,
         )
         if not filepath:
             return
         filepath = Path(filepath)
-        self.GLOBAL_VARS.LAST_SAVE_PATH = filepath.resolve().parent
+        self.GLOBAL_VARS.LAST_OPEN_PATH = filepath.resolve().parent
 
         if len(self.GLOBAL_VARS.IMAGES) == 0:
             self.onError("Could not write the file. Empty animation!")
