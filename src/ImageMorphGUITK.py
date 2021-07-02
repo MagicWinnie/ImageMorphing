@@ -1209,7 +1209,7 @@ class MainWindow(Frame):
                 self.onError("Error occured while saving the file!")
 
     def onAbout(self):
-        ABOUT_TEXT = "Image Morphing, v0.0.2\nBy Dmitriy Okoneshnikov, 2021\nVisit website: https://magicwinnie.github.io"
+        ABOUT_TEXT = "Image Morphing, v0.1.0\nBy Dmitriy Okoneshnikov, 2021\nVisit website: https://magicwinnie.github.io"
         self.onInfo(ABOUT_TEXT)
 
     def onExit(self, *args):
