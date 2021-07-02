@@ -1,7 +1,6 @@
 ### TO-DO:
 ### *Auto face cropping
 ### *Fix layout
-### *Split different kinds of points
 import os
 import sys
 import getpass
@@ -45,7 +44,9 @@ class GlobalVariables:
     IMG_MAX_HEIGHT = 350
     IMG_MAX_WIDTH = 350
 
-    LAST_NUM_LIST = 0
+    LAST_NUM_LIST_CORNER = 0
+    LAST_NUM_LIST_FACE = 0
+    LAST_NUM_LIST_USER = 0
 
     if platform.system() == "Windows":
         LAST_OPEN_PATH = "C:\\Users\\{}\\Pictures".format(getpass.getuser())
@@ -57,8 +58,12 @@ class GlobalVariables:
     IMAGES = []
     CURR_FRAME = None
     DO_ANIMATION = True
-    POINTS_1 = []
-    POINTS_2 = []
+    CORNER_POINTS_1 = []
+    CORNER_POINTS_2 = []
+    FACE_POINTS_1 = []
+    FACE_POINTS_2 = []
+    USER_POINTS_1 = []
+    USER_POINTS_2 = []
 
 
 class MainWindow(Frame):
@@ -106,10 +111,10 @@ class MainWindow(Frame):
         ##### -------------------------------
 
         self.label_settings = Label(self, text="Settings", font="bold")
-        self.label_settings.grid(row=0, column=2)
+        self.label_settings.grid(row=0, column=5)
 
         self.settings_frame = Frame(self)
-        self.settings_frame.grid(row=1, column=2, sticky="n")
+        self.settings_frame.grid(row=1, column=5, sticky="n")
 
         self.delta_label = Label(self.settings_frame, text="Delta (from 1 to 100): ")
         self.delta_label.grid(row=0, column=0, sticky="w")
@@ -163,27 +168,34 @@ class MainWindow(Frame):
         # )
         # self.cropped_input.grid(row=3, column=1)
 
+        self.corner_pt_gen_btn = Button(
+            self.settings_frame,
+            text="Add corner points",
+            command=self.addCorners,
+        )
+        self.corner_pt_gen_btn.grid(row=4, column=0, columnspan=2, sticky="ew")
+
         self.face_rec_gen_btn = Button(
             self.settings_frame,
             text="Generate points from face recognition",
             command=self.onFaceRecBtn,
         )
-        self.face_rec_gen_btn.grid(row=4, column=0, columnspan=2, sticky="ew")
+        self.face_rec_gen_btn.grid(row=5, column=0, columnspan=2, sticky="ew")
 
         self.start_btn = Button(
             self.settings_frame, text="Start", command=self.onStartBtn
         )
-        self.start_btn.grid(row=5, column=0, columnspan=2, sticky="ew")
+        self.start_btn.grid(row=6, column=0, columnspan=2, sticky="ew")
 
         self.output_size_label = Label(
             self.settings_frame, text="Output GIF resolution: None", anchor="center"
         )
-        self.output_size_label.grid(row=6, column=0, columnspan=2, sticky="ew")
+        self.output_size_label.grid(row=7, column=0, columnspan=2, sticky="ew")
 
         self.output_scale_label = Label(
             self.settings_frame, text="Output GIF size scale:"
         )
-        self.output_scale_label.grid(row=7, column=0, sticky="w")
+        self.output_scale_label.grid(row=8, column=0, sticky="w")
         self.output_scale_vcmd = (self.register(self.onEntryEditOutputScale), "%P")
         self.output_scale_input = Entry(
             self.settings_frame,
@@ -191,45 +203,92 @@ class MainWindow(Frame):
             validatecommand=self.output_scale_vcmd,
             width=5,
         )
-        self.output_scale_input.grid(row=7, column=1, sticky="e")
+        self.output_scale_input.grid(row=8, column=1, sticky="e")
 
         self.save_btn = Button(
             self.settings_frame, text="Save animation", command=self.save_file
         )
-        self.save_btn.grid(row=8, column=0, columnspan=2, sticky="ew")
+        self.save_btn.grid(row=9, column=0, columnspan=2, sticky="ew")
 
         self.Reset_btn = Button(
             self.settings_frame, text="Reset", command=self.onResetBtn
         )
-        self.Reset_btn.grid(row=9, column=0, columnspan=2, sticky="ew")
-
-        ##### -------------------------------
+        self.Reset_btn.grid(row=10, column=0, columnspan=2, sticky="ew")
 
         self.points_label = Label(self, text="List of pairs", font="bold")
-        self.points_label.grid(row=0, column=3)
+        self.points_label.grid(row=0, column=6)
+
+        ##### --------------CORNER-----------------
 
         self.points_container = Frame(self)
-        self.points_container.grid(row=1, column=3, sticky="news")
+        self.points_container.grid(row=1, column=6, sticky="news")
 
         self.points_canvas = Canvas(self.points_container)
         self.points_canvas.grid(row=0, column=0, sticky="news")
 
-        self.points_scrollbar = Scrollbar(self.points_canvas)
-        self.points_scrollbar.grid(row=0, column=1, sticky="ns")
+        self.corner_points_label = Label(
+            self.points_canvas, text="CORNER POINTS", font=("Arial", 10)
+        )
+        self.corner_points_label.grid(row=0, column=0)
 
-        self.points_list = Listbox(
+        self.corner_points_scrollbar = Scrollbar(self.points_canvas)
+        self.corner_points_scrollbar.grid(row=1, column=1, sticky="ns")
+
+        self.corner_points_list = Listbox(
             self.points_canvas,
-            yscrollcommand=self.points_scrollbar.set,
-            height=15,
+            yscrollcommand=self.corner_points_scrollbar.set,
+            height=8,
             selectmode="extended",
         )
-        self.points_list.bind("<Delete>", self.deletePtsList)
+        self.corner_points_list.bind("<Delete>", self.deleteCornerPtsList)
 
-        self.points_list.grid(row=0, column=0, sticky="ns")
-        self.points_scrollbar.config(command=self.points_list.yview)
+        self.corner_points_list.grid(row=1, column=0, sticky="ns")
+        self.corner_points_scrollbar.config(command=self.corner_points_list.yview)
+
+        ##### --------------FACE-----------------
+
+        self.face_points_label = Label(
+            self.points_canvas, text="FACE POINTS", font=("Arial", 10)
+        )
+        self.face_points_label.grid(row=2, column=0)
+
+        self.face_points_scrollbar = Scrollbar(self.points_canvas)
+        self.face_points_scrollbar.grid(row=3, column=1, sticky="ns")
+
+        self.face_points_list = Listbox(
+            self.points_canvas,
+            yscrollcommand=self.face_points_scrollbar.set,
+            height=8,
+            selectmode="extended",
+        )
+        self.face_points_list.bind("<Delete>", self.deleteFacePtsList)
+
+        self.face_points_list.grid(row=3, column=0, sticky="ns")
+        self.face_points_scrollbar.config(command=self.face_points_list.yview)
+
+        ##### --------------USER-----------------
+
+        self.user_points_label = Label(
+            self.points_canvas, text="USER POINTS", font=("Arial", 10)
+        )
+        self.user_points_label.grid(row=4, column=0)
+
+        self.user_points_scrollbar = Scrollbar(self.points_canvas)
+        self.user_points_scrollbar.grid(row=5, column=1, sticky="ns")
+
+        self.user_points_list = Listbox(
+            self.points_canvas,
+            yscrollcommand=self.user_points_scrollbar.set,
+            height=8,
+            selectmode="extended",
+        )
+        self.user_points_list.bind("<Delete>", self.deleteUserPtsList)
+
+        self.user_points_list.grid(row=5, column=0, sticky="ns")
+        self.user_points_scrollbar.config(command=self.user_points_list.yview)
 
         self.gif_label = Label(self, text="Animation", font="bold")
-        self.gif_label.grid(row=2, column=2, columnspan=2)
+        self.gif_label.grid(row=0, column=3, columnspan=2)
 
         self.start_gif_viewer()
 
@@ -251,34 +310,68 @@ class MainWindow(Frame):
             column=0, row=3, columnspan=4, sticky="ewn"
         )
 
-    def add2PtsList(self, pt1, pt2):
-        self.points_list.insert(END, "Pair #" + str(self.GLOBAL_VARS.LAST_NUM_LIST))
-        self.GLOBAL_VARS.LAST_NUM_LIST += 1
+    def add2PtsList(self, pt1, pt2, t):
+        if t == 0:
+            self.corner_points_list.insert(
+                END, "Pair #" + str(self.GLOBAL_VARS.LAST_NUM_LIST_CORNER)
+            )
+            self.GLOBAL_VARS.CORNER_POINTS_1.append(pt1)
+            self.GLOBAL_VARS.CORNER_POINTS_2.append(pt2)
+            self.GLOBAL_VARS.LAST_NUM_LIST_CORNER += 1
+        elif t == 1:
+            self.face_points_list.insert(
+                END, "Pair #" + str(self.GLOBAL_VARS.LAST_NUM_LIST_FACE)
+            )
+            self.GLOBAL_VARS.FACE_POINTS_1.append(pt1)
+            self.GLOBAL_VARS.FACE_POINTS_2.append(pt2)
+            self.GLOBAL_VARS.LAST_NUM_LIST_FACE += 1
+        elif t == 2:
+            self.user_points_list.insert(
+                END, "Pair #" + str(self.GLOBAL_VARS.LAST_NUM_LIST_USER)
+            )
+            self.GLOBAL_VARS.USER_POINTS_1.append(pt1)
+            self.GLOBAL_VARS.USER_POINTS_2.append(pt2)
+            self.GLOBAL_VARS.LAST_NUM_LIST_USER += 1
 
-        self.GLOBAL_VARS.POINTS_1.append(pt1)
-        self.GLOBAL_VARS.POINTS_2.append(pt2)
-
-    def deletePtsList(self, *args):
-        sel = self.points_list.curselection()
+    def deleteCornerPtsList(self, *args):
+        sel = self.corner_points_list.curselection()
         for index in sel[::-1]:
-            # if index in list(range(8)):
-            #     self.onWarn("Points # from 0 to 7 are immune!")
-            #     continue
-            self.points_list.delete(index)
-            self.GLOBAL_VARS.POINTS_1.pop(index)
-            self.GLOBAL_VARS.POINTS_2.pop(index)
+            self.corner_points_list.delete(index)
+            self.GLOBAL_VARS.CORNER_POINTS_1.pop(index)
+            self.GLOBAL_VARS.CORNER_POINTS_2.pop(index)
 
-        if self.points_list.size() == 0:
-            self.GLOBAL_VARS.LAST_NUM_LIST = 0
+    def deleteFacePtsList(self, *args):
+        sel = self.face_points_list.curselection()
+        for index in sel[::-1]:
+            self.face_points_list.delete(index)
+            self.GLOBAL_VARS.FACE_POINTS_1.pop(index)
+            self.GLOBAL_VARS.FACE_POINTS_2.pop(index)
+
+    def deleteUserPtsList(self, *args):
+        sel = self.user_points_list.curselection()
+        for index in sel[::-1]:
+            self.user_points_list.delete(index)
+            self.GLOBAL_VARS.USER_POINTS_1.pop(index)
+            self.GLOBAL_VARS.USER_POINTS_2.pop(index)
+
+    def deleteListPts(self):
+        self.GLOBAL_VARS.CORNER_POINTS_1 = []
+        self.GLOBAL_VARS.CORNER_POINTS_2 = []
+        self.GLOBAL_VARS.FACE_POINTS_1 = []
+        self.GLOBAL_VARS.FACE_POINTS_2 = []
+        self.GLOBAL_VARS.USER_POINTS_1 = []
+        self.GLOBAL_VARS.USER_POINTS_2 = []
 
     def deleteAllPts(self):
-        self.points_list.delete(0, END)
-        self.GLOBAL_VARS.POINTS_1 = []
-        self.GLOBAL_VARS.POINTS_2 = []
-        self.GLOBAL_VARS.LAST_NUM_LIST = 0
+        self.corner_points_list.delete(0, END)
+        self.face_points_list.delete(0, END)
+        self.user_points_list.delete(0, END)
+        self.deleteListPts()
+        self.GLOBAL_VARS.LAST_NUM_LIST_CORNER = 0
+        self.GLOBAL_VARS.LAST_NUM_LIST_FACE = 0
+        self.GLOBAL_VARS.LAST_NUM_LIST_USER = 0
 
     def onResetBtn(self):
-        self.face_rec_gen_btn["state"] = "normal"
         self.GLOBAL_VARS.IMAGES = []
         self.GLOBAL_VARS.IMAGE_1 = None
         self.GLOBAL_VARS.IMAGE_2 = None
@@ -300,20 +393,34 @@ class MainWindow(Frame):
         if self.GLOBAL_VARS.DELTA is None or self.GLOBAL_VARS.DURATION is None:
             self.onError("Delta or duration value is not set!")
             return
-        if len(self.GLOBAL_VARS.POINTS_1) < 3:
+        if (
+            len(self.GLOBAL_VARS.CORNER_POINTS_1)
+            + len(self.GLOBAL_VARS.FACE_POINTS_1)
+            + len(self.GLOBAL_VARS.USER_POINTS_1)
+        ) < 3:
             self.onError("You must have at least 3 points!")
             return
-        if len(self.GLOBAL_VARS.POINTS_1) != len(self.GLOBAL_VARS.POINTS_2):
+        if len(self.GLOBAL_VARS.CORNER_POINTS_1) != len(self.GLOBAL_VARS.CORNER_POINTS_2):
             self.onError(
-                "Length of self.GLOBAL_VARS.POINTS_1 != self.GLOBAL_VARS.POINTS_2!\nThis is unplanned behaviour! Please report the bug!"
+                "Length of self.GLOBAL_VARS.CORNER_POINTS_1 != self.GLOBAL_VARS.CORNER_POINTS_2!\nThis is unplanned behaviour! Please report the bug!"
+            )
+            return
+        if len(self.GLOBAL_VARS.FACE_POINTS_1) != len(self.GLOBAL_VARS.FACE_POINTS_2):
+            self.onError(
+                "Length of self.GLOBAL_VARS.FACE_POINTS_1 != self.GLOBAL_VARS.FACE_POINTS_2!\nThis is unplanned behaviour! Please report the bug!"
+            )
+            return
+        if len(self.GLOBAL_VARS.USER_POINTS_1) != len(self.GLOBAL_VARS.USER_POINTS_2):
+            self.onError(
+                "Length of self.GLOBAL_VARS.USER_POINTS_1 != self.GLOBAL_VARS.USER_POINTS_2!\nThis is unplanned behaviour! Please report the bug!"
             )
             return
 
         img1 = self.GLOBAL_VARS.IMAGE_1.copy()
         img2 = self.GLOBAL_VARS.IMAGE_2.copy()
 
-        pts1 = deepcopy(self.GLOBAL_VARS.POINTS_1)
-        pts2 = deepcopy(self.GLOBAL_VARS.POINTS_2)
+        pts1 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_1) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_1) + deepcopy(self.GLOBAL_VARS.USER_POINTS_1)
+        pts2 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_2) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_2) + deepcopy(self.GLOBAL_VARS.USER_POINTS_2)
 
         if self.GLOBAL_VARS.CROPPED:
             extreme_pts_1 = self.get_extreme_points(1)
@@ -351,8 +458,8 @@ class MainWindow(Frame):
                 img2, (max_width, max_height), interpolation=cv2.INTER_AREA
             )
 
-            pts1 = deepcopy(self.GLOBAL_VARS.POINTS_1)
-            pts2 = deepcopy(self.GLOBAL_VARS.POINTS_2)
+            pts1 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_1) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_1) + deepcopy(self.GLOBAL_VARS.USER_POINTS_1)
+            pts2 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_2) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_2) + deepcopy(self.GLOBAL_VARS.USER_POINTS_2)
 
             for i in range(len(pts1)):
                 pts1[i] = (pts1[i][0] - left_up_1[0], pts1[i][1] - left_up_1[1])
@@ -362,10 +469,10 @@ class MainWindow(Frame):
                 img1 = cv2.circle(img1, tuple(p), 8, (255, 0, 0), -1)
             for p in pts2:
                 img2 = cv2.circle(img2, tuple(p), 8, (255, 0, 0), -1)
-            cv2.imwrite("img1.jpg", img1)
-            cv2.imwrite("img2.jpg", img2)
-            print(pts1)
-            print(pts2)
+            # cv2.imwrite("img1.jpg", img1)
+            # cv2.imwrite("img2.jpg", img2)
+            # print(pts1)
+            # print(pts2)
 
         self.GLOBAL_VARS.IMAGES = []
         for i in range(0, 101, self.GLOBAL_VARS.DELTA):
@@ -388,9 +495,15 @@ class MainWindow(Frame):
         )
 
     def addCorners(self):
+        self.corner_points_list.delete(0, END)
+        self.GLOBAL_VARS.CORNER_POINTS_1 = []
+        self.GLOBAL_VARS.CORNER_POINTS_2 = []
+        self.GLOBAL_VARS.LAST_NUM_LIST_CORNER = 0
+
         self.add2PtsList(
             [self.GLOBAL_VARS.IMAGE_1.shape[1] - 1, 0],
             [self.GLOBAL_VARS.IMAGE_2.shape[1] - 1, 0],
+            0,
         )
         self.add2PtsList(
             [
@@ -401,20 +514,24 @@ class MainWindow(Frame):
                 self.GLOBAL_VARS.IMAGE_2.shape[1] - 1,
                 self.GLOBAL_VARS.IMAGE_2.shape[0] - 1,
             ],
+            0,
         )
         self.add2PtsList(
             [0, self.GLOBAL_VARS.IMAGE_1.shape[0] - 1],
             [0, self.GLOBAL_VARS.IMAGE_2.shape[0] - 1],
+            0,
         )
-        self.add2PtsList([0, 0], [0, 0])
+        self.add2PtsList([0, 0], [0, 0], 0)
 
         self.add2PtsList(
             [self.GLOBAL_VARS.IMAGE_1.shape[1] // 2 - 1, 0],
             [self.GLOBAL_VARS.IMAGE_2.shape[1] // 2 - 1, 0],
+            0,
         )
         self.add2PtsList(
             [0, self.GLOBAL_VARS.IMAGE_1.shape[0] // 2 - 1],
             [0, self.GLOBAL_VARS.IMAGE_2.shape[0] // 2 - 1],
+            0,
         )
         self.add2PtsList(
             [
@@ -425,6 +542,7 @@ class MainWindow(Frame):
                 self.GLOBAL_VARS.IMAGE_2.shape[1] // 2 - 1,
                 self.GLOBAL_VARS.IMAGE_2.shape[0] - 1,
             ],
+            0,
         )
         self.add2PtsList(
             [
@@ -435,6 +553,7 @@ class MainWindow(Frame):
                 self.GLOBAL_VARS.IMAGE_2.shape[1] - 1,
                 self.GLOBAL_VARS.IMAGE_2.shape[0] // 2 - 1,
             ],
+            0,
         )
 
     def onFaceRecBtn(self):
@@ -444,6 +563,11 @@ class MainWindow(Frame):
         self.onInfo(
             "Several faces may be recognized.\nOnly the largest faces will be used!"
         )
+
+        self.face_points_list.delete(0, END)
+        self.GLOBAL_VARS.FACE_POINTS_1 = []
+        self.GLOBAL_VARS.FACE_POINTS_2 = []
+        self.GLOBAL_VARS.LAST_NUM_LIST_FACE = 0
 
         gray1 = cv2.cvtColor(self.GLOBAL_VARS.IMAGE_1, cv2.COLOR_BGR2GRAY)
         gray2 = cv2.cvtColor(self.GLOBAL_VARS.IMAGE_2, cv2.COLOR_BGR2GRAY)
@@ -484,9 +608,7 @@ class MainWindow(Frame):
         points2 = max_shape_2.tolist()
 
         for i in range(61):
-            self.add2PtsList(points1[i], points2[i])
-
-        self.face_rec_gen_btn["state"] = "disabled"
+            self.add2PtsList(points1[i], points2[i], 1)
 
     def onEntryEditCropped(self):
         if self.reversed_var.get() == 1:
@@ -666,15 +788,45 @@ class MainWindow(Frame):
 
     def get_extreme_points(self, n):
         if n == 1:
-            left = min(self.GLOBAL_VARS.POINTS_1, key=lambda p: p[0])
-            right = max(self.GLOBAL_VARS.POINTS_1, key=lambda p: p[0])
-            top = min(self.GLOBAL_VARS.POINTS_1, key=lambda p: p[1])
-            bottom = max(self.GLOBAL_VARS.POINTS_1, key=lambda p: p[1])
+            left_cor = min(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[0])
+            right_cor = max(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[0])
+            top_cor = min(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[1])
+            bottom_cor = max(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[1])
+            
+            left_face = min(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[0])
+            right_face = max(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[0])
+            top_face = min(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[1])
+            bottom_face = max(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[1])
+            
+            left_user = min(self.GLOBAL_VARS.USER_POINTS_1, key=lambda p: p[0])
+            right_user = max(self.GLOBAL_VARS.USER_POINTS_1, key=lambda p: p[0])
+            top_user = min(self.GLOBAL_VARS.USER_POINTS_1, key=lambda p: p[1])
+            bottom_user = max(self.GLOBAL_VARS.USER_POINTS_1, key=lambda p: p[1])
+
+            left = min(left_cor, left_face, left_user)
+            right = max(right_cor, right_face, right_user)
+            top = min(top_cor, top_face, top_user)
+            bottom = max(bottom_cor, bottom_face, bottom_user)
         else:
-            left = min(self.GLOBAL_VARS.POINTS_2, key=lambda p: p[0])
-            right = max(self.GLOBAL_VARS.POINTS_2, key=lambda p: p[0])
-            top = min(self.GLOBAL_VARS.POINTS_2, key=lambda p: p[1])
-            bottom = max(self.GLOBAL_VARS.POINTS_2, key=lambda p: p[1])
+            left_cor = min(self.GLOBAL_VARS.CORNER_POINTS_2, key=lambda p: p[0])
+            right_cor = max(self.GLOBAL_VARS.CORNER_POINTS_2, key=lambda p: p[0])
+            top_cor = min(self.GLOBAL_VARS.CORNER_POINTS_2, key=lambda p: p[1])
+            bottom_cor = max(self.GLOBAL_VARS.CORNER_POINTS_2, key=lambda p: p[1])
+            
+            left_face = min(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[0])
+            right_face = max(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[0])
+            top_face = min(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[1])
+            bottom_face = max(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[1])
+            
+            left_user = min(self.GLOBAL_VARS.USER_POINTS_2, key=lambda p: p[0])
+            right_user = max(self.GLOBAL_VARS.USER_POINTS_2, key=lambda p: p[0])
+            top_user = min(self.GLOBAL_VARS.USER_POINTS_2, key=lambda p: p[1])
+            bottom_user = max(self.GLOBAL_VARS.USER_POINTS_2, key=lambda p: p[1])
+
+            left = min(left_cor, left_face, left_user)
+            right = max(right_cor, right_face, right_user)
+            top = min(top_cor, top_face, top_user)
+            bottom = max(bottom_cor, bottom_face, bottom_user)
 
         return (left, right, top, bottom)
 
@@ -703,7 +855,7 @@ class MainWindow(Frame):
                 image=self.GLOBAL_VARS.CURR_FRAME,
             )
             self.gif_canvas.config(width=frame.shape[1] + 5, height=frame.shape[0] + 5)
-            self.gif_canvas.grid(row=3, column=2, sticky="news")
+            self.gif_canvas.grid(row=1, column=3, columnspan=2, sticky="news")
         else:
             self.reset_gif_viewer()
         if self.GLOBAL_VARS.DURATION is None or self.GLOBAL_VARS.DURATION == 0.0:
@@ -740,13 +892,17 @@ class MainWindow(Frame):
         )
         self.GLOBAL_VARS.CANVAS_2_POS = [int(event.x * ratio_x), int(event.y * ratio_y)]
 
-        self.add2PtsList(self.GLOBAL_VARS.CANVAS_1_POS, self.GLOBAL_VARS.CANVAS_2_POS)
+        self.add2PtsList(
+            self.GLOBAL_VARS.CANVAS_1_POS, self.GLOBAL_VARS.CANVAS_2_POS, 2
+        )
 
         self.GLOBAL_VARS.CANVAS_1_POS = None
         self.GLOBAL_VARS.CANVAS_2_POS = None
 
     def drawPoints(self):
-        sel = self.points_list.curselection()
+        sel_corner = self.corner_points_list.curselection()
+        sel_face = self.face_points_list.curselection()
+        sel_user = self.user_points_list.curselection()
 
         if (
             self.GLOBAL_VARS.IMAGE_1 is not None
@@ -755,63 +911,99 @@ class MainWindow(Frame):
             temp_img_1 = self.GLOBAL_VARS.IMAGE_1.copy()
             temp_img_2 = self.GLOBAL_VARS.IMAGE_2.copy()
 
-            size_big = max(5, temp_img_1.shape[1]//103)
-            size_small = max(3, temp_img_1.shape[1]//123)
+            size_big = max(5, temp_img_1.shape[1] // 103)
+            size_small = max(3, temp_img_1.shape[1] // 123)
 
-            if (
-                len(self.GLOBAL_VARS.POINTS_1) == len(self.GLOBAL_VARS.POINTS_2)
-                and len(self.GLOBAL_VARS.POINTS_1) > 0
-            ):
-                for i in range(len(self.GLOBAL_VARS.POINTS_1)):
-                    if i in sel:
-                        temp_img_1 = cv2.circle(
-                            temp_img_1,
-                            tuple(self.GLOBAL_VARS.POINTS_1[i]),
-                            size_small,
-                            (0, 0, 255),
-                            -1,
-                        )
-                    else:
-                        temp_img_1 = cv2.circle(
-                            temp_img_1,
-                            tuple(self.GLOBAL_VARS.POINTS_1[i]),
-                            size_small,
-                            (0, 255, 0),
-                            -1,
-                        )
-
-                    temp_img_1 = cv2.circle(
-                        temp_img_1,
-                        tuple(self.GLOBAL_VARS.POINTS_1[i]),
-                        size_big,
-                        (0, 0, 0),
-                        2,
-                    )
-
-                    if i in sel:
-                        temp_img_2 = cv2.circle(
-                            temp_img_2,
-                            tuple(self.GLOBAL_VARS.POINTS_2[i]),
-                            size_small,
-                            (0, 0, 255),
-                            -1,
-                        )
-                    else:
-                        temp_img_2 = cv2.circle(
-                            temp_img_2,
-                            tuple(self.GLOBAL_VARS.POINTS_2[i]),
-                            size_small,
-                            (0, 255, 0),
-                            -1,
-                        )
-
-                    temp_img_2 = cv2.circle(
-                        temp_img_2,
-                        tuple(self.GLOBAL_VARS.POINTS_2[i]),
-                        size_big,
-                        (0, 0, 0),
-                        2,
-                    )
+            # CORNER
+            for i in range(len(self.GLOBAL_VARS.CORNER_POINTS_1)):
+                temp_img_1 = cv2.circle(
+                    temp_img_1,
+                    tuple(self.GLOBAL_VARS.CORNER_POINTS_1[i]),
+                    size_small,
+                    (0, 0, 255) if i in sel_corner else (0, 255, 0),
+                    -1,
+                )
+                temp_img_1 = cv2.circle(
+                    temp_img_1,
+                    tuple(self.GLOBAL_VARS.CORNER_POINTS_1[i]),
+                    size_big,
+                    (0, 0, 0),
+                    2,
+                )
+                temp_img_2 = cv2.circle(
+                    temp_img_2,
+                    tuple(self.GLOBAL_VARS.CORNER_POINTS_2[i]),
+                    size_small,
+                    (0, 0, 255) if i in sel_corner else (0, 255, 0),
+                    -1,
+                )
+                temp_img_2 = cv2.circle(
+                    temp_img_2,
+                    tuple(self.GLOBAL_VARS.CORNER_POINTS_2[i]),
+                    size_big,
+                    (0, 0, 0),
+                    2,
+                )
+            # FACE
+            for i in range(len(self.GLOBAL_VARS.FACE_POINTS_1)):
+                temp_img_1 = cv2.circle(
+                    temp_img_1,
+                    tuple(self.GLOBAL_VARS.FACE_POINTS_1[i]),
+                    size_small,
+                    (0, 0, 255) if i in sel_face else (0, 255, 0),
+                    -1,
+                )
+                temp_img_1 = cv2.circle(
+                    temp_img_1,
+                    tuple(self.GLOBAL_VARS.FACE_POINTS_1[i]),
+                    size_big,
+                    (0, 0, 0),
+                    2,
+                )
+                temp_img_2 = cv2.circle(
+                    temp_img_2,
+                    tuple(self.GLOBAL_VARS.FACE_POINTS_2[i]),
+                    size_small,
+                    (0, 0, 255) if i in sel_face else (0, 255, 0),
+                    -1,
+                )
+                temp_img_2 = cv2.circle(
+                    temp_img_2,
+                    tuple(self.GLOBAL_VARS.FACE_POINTS_2[i]),
+                    size_big,
+                    (0, 0, 0),
+                    2,
+                )
+            # USER
+            for i in range(len(self.GLOBAL_VARS.USER_POINTS_1)):
+                temp_img_1 = cv2.circle(
+                    temp_img_1,
+                    tuple(self.GLOBAL_VARS.USER_POINTS_1[i]),
+                    size_small,
+                    (0, 0, 255) if i in sel_user else (0, 255, 0),
+                    -1,
+                )
+                temp_img_1 = cv2.circle(
+                    temp_img_1,
+                    tuple(self.GLOBAL_VARS.USER_POINTS_1[i]),
+                    size_big,
+                    (0, 0, 0),
+                    2,
+                )
+                temp_img_2 = cv2.circle(
+                    temp_img_2,
+                    tuple(self.GLOBAL_VARS.USER_POINTS_2[i]),
+                    size_small,
+                    (0, 0, 255) if i in sel_user else (0, 255, 0),
+                    -1,
+                )
+                temp_img_2 = cv2.circle(
+                    temp_img_2,
+                    tuple(self.GLOBAL_VARS.USER_POINTS_2[i]),
+                    size_big,
+                    (0, 0, 0),
+                    2,
+                )
 
             if self.GLOBAL_VARS.CANVAS_1_POS is not None:
                 temp_img_1 = cv2.circle(
@@ -869,7 +1061,7 @@ class MainWindow(Frame):
 
     def reset_gif_viewer(self):
         self.gif_canvas = Canvas(self, width=350, height=350)
-        self.gif_canvas.grid(row=3, column=2, columnspan=2, sticky="news")
+        self.gif_canvas.grid(row=1, column=3, columnspan=2, sticky="news")
 
     def start_gif_viewer(self):
         self.reset_gif_viewer()
@@ -891,10 +1083,8 @@ class MainWindow(Frame):
         self.GLOBAL_VARS.LAST_OPEN_PATH = filepath.resolve().parent
 
         if len(args) == 1:
-            self.face_rec_gen_btn["state"] = "normal"
             self.GLOBAL_VARS.IMAGES = []
-            self.GLOBAL_VARS.POINTS_1 = []
-            self.GLOBAL_VARS.POINTS_2 = []
+            self.deleteListPts()
             self.deleteAllPts()
 
             if args[0] == 1:
