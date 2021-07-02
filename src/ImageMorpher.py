@@ -38,11 +38,18 @@ def calculateDelaunayTriangles(rect, points):
         pt2 = (t[2], t[3])
         pt3 = (t[4], t[5])
 
-        if rectContains(rect, pt1) and rectContains(rect, pt2) and rectContains(rect, pt3):
+        if (
+            rectContains(rect, pt1)
+            and rectContains(rect, pt2)
+            and rectContains(rect, pt3)
+        ):
             ind = []
             for j in range(0, 3):
                 for k in range(0, len(points)):
-                    if(abs(pt[j][0] - points[k][0]) < 1.0 and abs(pt[j][1] - points[k][1]) < 1.0):
+                    if (
+                        abs(pt[j][0] - points[k][0]) < 1.0
+                        and abs(pt[j][1] - points[k][1]) < 1.0
+                    ):
                         ind.append(k)
             if len(ind) == 3:
                 delaunayTri.append((ind[0], ind[1], ind[2]))
@@ -54,8 +61,14 @@ def calculateDelaunayTriangles(rect, points):
 # output an image of size.
 def applyAffineTransform(src, srcTri, dstTri, size):
     warpMat = cv2.getAffineTransform(np.float32(srcTri), np.float32(dstTri))
-    dst = cv2.warpAffine(src, warpMat, (size[0], size[1]), None,
-                         flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT_101)
+    dst = cv2.warpAffine(
+        src,
+        warpMat,
+        (size[0], size[1]),
+        None,
+        flags=cv2.INTER_LINEAR,
+        borderMode=cv2.BORDER_REFLECT_101,
+    )
 
     return dst
 
@@ -81,8 +94,8 @@ def morphTriangle(img1, img2, img, t1, t2, t, alpha):
     mask = np.zeros((r[3], r[2], 3), dtype=np.float32)
     cv2.fillConvexPoly(mask, np.int32(tRect), (1.0, 1.0, 1.0), 16, 0)
 
-    img1Rect = img1[r1[1]:r1[1] + r1[3], r1[0]:r1[0] + r1[2]]
-    img2Rect = img2[r2[1]:r2[1] + r2[3], r2[0]:r2[0] + r2[2]]
+    img1Rect = img1[r1[1] : r1[1] + r1[3], r1[0] : r1[0] + r1[2]]
+    img2Rect = img2[r2[1] : r2[1] + r2[3], r2[0] : r2[0] + r2[2]]
 
     size = (r[2], r[3])
     warpImage1 = applyAffineTransform(img1Rect, t1Rect, tRect, size)
@@ -92,8 +105,9 @@ def morphTriangle(img1, img2, img, t1, t2, t, alpha):
     imgRect = (1.0 - alpha) * warpImage1 + alpha * warpImage2
 
     # Copy triangular region of the rectangular patch to the output image
-    img[r[1]: r[1] + r[3], r[0]: r[0] + r[2]] = img[r[1]: r[1] +
-                                                    r[3], r[0]: r[0] + r[2]] * (1 - mask) + imgRect * mask
+    img[r[1] : r[1] + r[3], r[0] : r[0] + r[2]] = (
+        img[r[1] : r[1] + r[3], r[0] : r[0] + r[2]] * (1 - mask) + imgRect * mask
+    )
 
 
 def processFrame(img1, img2, alpha, points1, points2):
@@ -111,23 +125,26 @@ def processFrame(img1, img2, alpha, points1, points2):
     rect = (0, 0, max(img1.shape[1], img2.shape[1]), max(img1.shape[0], img2.shape[0]))
     tri = calculateDelaunayTriangles(rect, points)
 
-    imgMorph = np.zeros(tuple([max(img1.shape[0], img2.shape[0]), max(img1.shape[1], img2.shape[1]), 3]), dtype=img1.dtype)
+    imgMorph = np.zeros(
+        tuple(
+            [max(img1.shape[0], img2.shape[0]), max(img1.shape[1], img2.shape[1]), 3]
+        ),
+        dtype=img1.dtype,
+    )
 
     for x, y, z in tri:
         t1 = [points1[x], points1[y], points1[z]]
         t2 = [points2[x], points2[y], points2[z]]
-        t = [points[x],  points[y],  points[z]]
+        t = [points[x], points[y], points[z]]
 
         morphTriangle(img1, img2, imgMorph, t1, t2, t, alpha)
 
     return np.uint8(imgMorph)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor('shape_predictor_68_face_landmarks.dat')
-
-
+    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
 
     filename1 = ""
     filename2 = ""
@@ -136,21 +153,17 @@ if __name__ == '__main__':
     duration = 0.15
     reverse = False
 
-
     img1 = cv2.imread(filename1)
     img2 = cv2.imread(filename2)
 
     # img1 = image_resize(img1, height=800)
     # img2 = image_resize(img2, height=800)
 
-    new_shape = (
-        max(img1.shape[0], img2.shape[0]),
-        max(img1.shape[1], img2.shape[1])
-    )
-    
+    new_shape = (max(img1.shape[0], img2.shape[0]), max(img1.shape[1], img2.shape[1]))
+
     img1 = resize(img1, new_shape, True)
     img2 = resize(img2, new_shape, True)
- 
+
     # FROM DLIB
 
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
@@ -178,10 +191,10 @@ if __name__ == '__main__':
     points1.append([0, 0])
 
     # MIDDLE POINTS1
-    points1.append([img1.shape[1]//2 - 1, 0])
-    points1.append([0, img1.shape[0]//2 - 1])
-    points1.append([img1.shape[1]//2 - 1, img1.shape[0] - 1])
-    points1.append([img1.shape[1] - 1, img1.shape[0]//2 - 1])
+    points1.append([img1.shape[1] // 2 - 1, 0])
+    points1.append([0, img1.shape[0] // 2 - 1])
+    points1.append([img1.shape[1] // 2 - 1, img1.shape[0] - 1])
+    points1.append([img1.shape[1] - 1, img1.shape[0] // 2 - 1])
 
     # CORNER POINTS2
     points2.append([img2.shape[1] - 1, 0])
@@ -190,11 +203,10 @@ if __name__ == '__main__':
     points2.append([0, 0])
 
     # MIDDLE POINTS2
-    points2.append([img2.shape[1]//2 - 1, 0])
-    points2.append([0, img2.shape[0]//2 - 1])
-    points2.append([img2.shape[1]//2 - 1, img2.shape[0] - 1])
-    points2.append([img2.shape[1] - 1, img2.shape[0]//2 - 1])
-    
+    points2.append([img2.shape[1] // 2 - 1, 0])
+    points2.append([0, img2.shape[0] // 2 - 1])
+    points2.append([img2.shape[1] // 2 - 1, img2.shape[0] - 1])
+    points2.append([img2.shape[1] - 1, img2.shape[0] // 2 - 1])
 
     images = []
     for i in range(0, 101, delta):
@@ -205,4 +217,4 @@ if __name__ == '__main__':
     if reverse:
         images += list(reversed(images))
 
-    imageio.mimsave('output.gif', images, duration=duration)
+    imageio.mimsave("output.gif", images, duration=duration)

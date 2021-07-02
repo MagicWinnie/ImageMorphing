@@ -26,10 +26,12 @@ def resize(img, new_shape, scale=False):
 
     delta_w = new_shape[1] - img.shape[1]
     delta_h = new_shape[0] - img.shape[0]
-    top, bottom = delta_h//2, delta_h - delta_h//2
-    left, right = delta_w//2, delta_w - delta_w//2
+    top, bottom = delta_h // 2, delta_h - delta_h // 2
+    left, right = delta_w // 2, delta_w - delta_w // 2
 
-    result = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 255, 255))
+    result = cv2.copyMakeBorder(
+        img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(255, 255, 255)
+    )
 
     result = cv2.resize(result, (new_shape[1], new_shape[0]))
     return result

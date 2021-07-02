@@ -11,7 +11,3 @@
 ### Run after building:
 1. `cd ImageMorphGUITK/`
 2. `ImageMorphGUITK.exe`
-## TO-DO
-- [X] Manual point addition
-- [ ] Auto face cropping
-- [ ] Scrollable MainWindow

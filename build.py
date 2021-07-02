@@ -3,53 +3,62 @@ import sys
 import shutil
 import subprocess
 
-args = sys.argv
+PY_FILE = "ImageMorphGUITK.py"
 
-if len(args) != 3:
-    print("Usage: python build.py <version> <.py file>")
-    sys.exit(-1)
-
-if not os.path.isfile(os.path.join('src', args[2])):
-    print("[ERROR] %s not found." % os.path.join('src', args[2]))
+if not os.path.isfile(os.path.join("src", PY_FILE)):
+    print("[ERROR] %s not found." % os.path.join("src", PY_FILE))
     sys.exit(-1)
 
 try:
-    print("[INFO] Trying to delete %s ..." % args[2].replace('.py', ''))
-    shutil.rmtree(args[2].replace('.py', ''))
+    print("[INFO] Trying to delete %s ..." % PY_FILE.replace(".py", ""))
+    shutil.rmtree(PY_FILE.replace(".py", ""))
 except FileNotFoundError:
-    print("[INFO] %s does not exist." % args[2].replace('.py', ''))
+    print("[INFO] %s does not exist." % PY_FILE.replace(".py", ""))
 
 try:
-    print("[INFO] Trying to delete %s-%s.zip ..." % (args[1], args[2].replace('.py', '')))
-    os.remove("%s-%s.zip" % (args[1], args[2].replace('.py', '')))
+    print(
+        "[INFO] Trying to delete %s-%s.zip ..."
+        % (PY_FILE.replace(".py", ""), "Windows")
+    )
+    os.remove("%s-%s.zip" % (PY_FILE.replace(".py", ""), "Windows"))
 except FileNotFoundError:
-    print("[INFO] %s-%s.zip does not exist." % (args[1], args[2].replace('.py', '')))
+    print("[INFO] %s-%s.zip does not exist." % (PY_FILE.replace(".py", ""), "Windows"))
 
 
 print("[INFO] Running pyinstaller...")
 try:
-    subprocess.run(['pyinstaller.exe', '--windowed', '--distpath', '.', os.path.join('src', args[2])], check=True)
+    subprocess.run(
+        [
+            "pyinstaller.exe",
+            "--windowed",
+            "--distpath",
+            ".",
+            os.path.join("src", PY_FILE),
+        ],
+        check=True,
+    )
 except subprocess.CalledProcessError:
     print("[ERROR] Unknown error.")
-args[2] = args[2].replace('.py', '')
+
+PY_FILE = PY_FILE.replace(".py", "")
 
 try:
     print("[INFO] Trying to delete build/ ...")
-    shutil.rmtree('build/')
+    shutil.rmtree("build/")
 except FileNotFoundError:
     print("[INFO] build/ does not exist.")
 try:
-    print("[INFO] Trying to delete %s.spec..." % args[2])
-    os.remove('%s.spec' % args[2])
+    print("[INFO] Trying to delete %s.spec..." % PY_FILE)
+    os.remove("%s.spec" % PY_FILE)
 except FileNotFoundError:
-    print("[INFO] %s.spec does not exist." % args[2])
+    print("[INFO] %s.spec does not exist." % PY_FILE)
     pass
 
 print("[INFO] Copying shape_predictor_68_face_landmarks.dat ...")
 shutil.copyfile(
-    os.path.join('src', 'shape_predictor_68_face_landmarks.dat'),
-    os.path.join(args[2], 'shape_predictor_68_face_landmarks.dat')
+    os.path.join("src", "shape_predictor_68_face_landmarks.dat"),
+    os.path.join(PY_FILE, "shape_predictor_68_face_landmarks.dat"),
 )
-print("[INFO] Making an archive from %s ..." % args[2])
-shutil.make_archive('%s-%s' % (args[1], args[2]), 'zip', args[2])
+print("[INFO] Making an archive from %s ..." % PY_FILE)
+shutil.make_archive("%s-%s" % (PY_FILE, "Windows"), "zip", PY_FILE)
 print("[INFO] Done.")
