@@ -4,6 +4,8 @@ import shutil
 import subprocess
 
 PY_FILE = "ImageMorphGUITK.py"
+haarcascade = "haarcascade_frontalface_alt2.xml"
+LBFmodel = "lbfmodel.yaml"
 
 if not os.path.isfile(os.path.join("src", PY_FILE)):
     print("[ERROR] %s not found." % os.path.join("src", PY_FILE))
@@ -54,10 +56,15 @@ except FileNotFoundError:
     print("[INFO] %s.spec does not exist." % PY_FILE)
     pass
 
-print("[INFO] Copying shape_predictor_68_face_landmarks.dat ...")
+print("[INFO] Copying %s ..." % haarcascade)
 shutil.copyfile(
-    os.path.join("src", "shape_predictor_68_face_landmarks.dat"),
-    os.path.join(PY_FILE, "shape_predictor_68_face_landmarks.dat"),
+    os.path.join("src", haarcascade),
+    os.path.join(PY_FILE, haarcascade),
+)
+print("[INFO] Copying %s ..." % LBFmodel)
+shutil.copyfile(
+    os.path.join("src", LBFmodel),
+    os.path.join(PY_FILE, LBFmodel),
 )
 print("[INFO] Making an archive from %s ..." % PY_FILE)
 shutil.make_archive("%s-%s" % (PY_FILE, "Windows"), "zip", PY_FILE)

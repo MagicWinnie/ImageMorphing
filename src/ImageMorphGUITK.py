@@ -85,7 +85,9 @@ class MainWindow(Frame):
             self.detector = cv2.CascadeClassifier(os.path.join(pwd, haarcascade))
         else:
             self.onError(
-                "Could not find the following file: {}. Download the file and relaunch the app!".format(haarcascade)
+                "Could not find the following file: {}. Download the file and relaunch the app!".format(
+                    haarcascade
+                )
             )
             sys.exit(-1)
         if os.path.isfile(os.path.join(pwd, LBFmodel)):
@@ -93,7 +95,9 @@ class MainWindow(Frame):
             self.landmark_detector.loadModel(os.path.join(pwd, LBFmodel))
         else:
             self.onError(
-                "Could not find the following file: {}. Download the file and relaunch the app!".format(LBFmodel)
+                "Could not find the following file: {}. Download the file and relaunch the app!".format(
+                    LBFmodel
+                )
             )
             sys.exit(-1)
 
@@ -395,8 +399,8 @@ class MainWindow(Frame):
 
         self.output_size_label.configure(text="Output GIF resolution: None")
 
-        self.btn_open_1['state'] = 'normal'
-        self.btn_open_2['state'] = 'normal'
+        self.btn_open_1["state"] = "normal"
+        self.btn_open_2["state"] = "normal"
 
     def onStartBtn(self):
         if self.GLOBAL_VARS.IMAGE_1 is None or self.GLOBAL_VARS.IMAGE_2 is None:
@@ -412,7 +416,9 @@ class MainWindow(Frame):
         ) < 3:
             self.onError("You must have at least 3 points!")
             return
-        if len(self.GLOBAL_VARS.CORNER_POINTS_1) != len(self.GLOBAL_VARS.CORNER_POINTS_2):
+        if len(self.GLOBAL_VARS.CORNER_POINTS_1) != len(
+            self.GLOBAL_VARS.CORNER_POINTS_2
+        ):
             self.onError(
                 "Length of self.GLOBAL_VARS.CORNER_POINTS_1 != self.GLOBAL_VARS.CORNER_POINTS_2!\nThis is unplanned behaviour! Please report the bug!"
             )
@@ -431,8 +437,16 @@ class MainWindow(Frame):
         img1 = self.GLOBAL_VARS.IMAGE_1.copy()
         img2 = self.GLOBAL_VARS.IMAGE_2.copy()
 
-        pts1 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_1) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_1) + deepcopy(self.GLOBAL_VARS.USER_POINTS_1)
-        pts2 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_2) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_2) + deepcopy(self.GLOBAL_VARS.USER_POINTS_2)
+        pts1 = (
+            deepcopy(self.GLOBAL_VARS.CORNER_POINTS_1)
+            + deepcopy(self.GLOBAL_VARS.FACE_POINTS_1)
+            + deepcopy(self.GLOBAL_VARS.USER_POINTS_1)
+        )
+        pts2 = (
+            deepcopy(self.GLOBAL_VARS.CORNER_POINTS_2)
+            + deepcopy(self.GLOBAL_VARS.FACE_POINTS_2)
+            + deepcopy(self.GLOBAL_VARS.USER_POINTS_2)
+        )
 
         if self.GLOBAL_VARS.CROPPED:
             extreme_pts_1 = self.get_extreme_points(1)
@@ -470,8 +484,16 @@ class MainWindow(Frame):
                 img2, (max_width, max_height), interpolation=cv2.INTER_AREA
             )
 
-            pts1 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_1) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_1) + deepcopy(self.GLOBAL_VARS.USER_POINTS_1)
-            pts2 = deepcopy(self.GLOBAL_VARS.CORNER_POINTS_2) + deepcopy(self.GLOBAL_VARS.FACE_POINTS_2) + deepcopy(self.GLOBAL_VARS.USER_POINTS_2)
+            pts1 = (
+                deepcopy(self.GLOBAL_VARS.CORNER_POINTS_1)
+                + deepcopy(self.GLOBAL_VARS.FACE_POINTS_1)
+                + deepcopy(self.GLOBAL_VARS.USER_POINTS_1)
+            )
+            pts2 = (
+                deepcopy(self.GLOBAL_VARS.CORNER_POINTS_2)
+                + deepcopy(self.GLOBAL_VARS.FACE_POINTS_2)
+                + deepcopy(self.GLOBAL_VARS.USER_POINTS_2)
+            )
 
             for i in range(len(pts1)):
                 pts1[i] = (pts1[i][0] - left_up_1[0], pts1[i][1] - left_up_1[1])
@@ -784,12 +806,12 @@ class MainWindow(Frame):
             right_cor = max(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[0])
             top_cor = min(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[1])
             bottom_cor = max(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[1])
-            
+
             left_face = min(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[0])
             right_face = max(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[0])
             top_face = min(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[1])
             bottom_face = max(self.GLOBAL_VARS.FACE_POINTS_1, key=lambda p: p[1])
-            
+
             left_user = min(self.GLOBAL_VARS.USER_POINTS_1, key=lambda p: p[0])
             right_user = max(self.GLOBAL_VARS.USER_POINTS_1, key=lambda p: p[0])
             top_user = min(self.GLOBAL_VARS.USER_POINTS_1, key=lambda p: p[1])
@@ -804,12 +826,12 @@ class MainWindow(Frame):
             right_cor = max(self.GLOBAL_VARS.CORNER_POINTS_2, key=lambda p: p[0])
             top_cor = min(self.GLOBAL_VARS.CORNER_POINTS_2, key=lambda p: p[1])
             bottom_cor = max(self.GLOBAL_VARS.CORNER_POINTS_2, key=lambda p: p[1])
-            
+
             left_face = min(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[0])
             right_face = max(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[0])
             top_face = min(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[1])
             bottom_face = max(self.GLOBAL_VARS.FACE_POINTS_2, key=lambda p: p[1])
-            
+
             left_user = min(self.GLOBAL_VARS.USER_POINTS_2, key=lambda p: p[0])
             right_user = max(self.GLOBAL_VARS.USER_POINTS_2, key=lambda p: p[0])
             top_user = min(self.GLOBAL_VARS.USER_POINTS_2, key=lambda p: p[1])
@@ -1121,8 +1143,8 @@ class MainWindow(Frame):
                     self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
 
                     self.addCorners()
-                
-                self.btn_open_1['state'] = 'disabled'
+
+                self.btn_open_1["state"] = "disabled"
             elif args[0] == 2:
                 self.GLOBAL_VARS.IMAGE_2 = cv2.imread(str(filepath))
 
@@ -1168,7 +1190,7 @@ class MainWindow(Frame):
 
                     self.addCorners()
 
-                self.btn_open_2['state'] = 'disabled'
+                self.btn_open_2["state"] = "disabled"
 
     def save_file(self, *args):
         filepath = asksaveasfilename(
