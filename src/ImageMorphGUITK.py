@@ -95,15 +95,15 @@ class MainWindow(Frame):
         self.master.title("Image Morphing GUI")
         self.grid()
 
-        btn_open_1 = Button(
+        self.btn_open_1 = Button(
             self, text="Open Image #1", command=partial(self.open_file, 1)
         )
-        btn_open_1.grid(row=0, column=0)
+        self.btn_open_1.grid(row=0, column=0)
 
-        btn_open_2 = Button(
+        self.btn_open_2 = Button(
             self, text="Open Image #2", command=partial(self.open_file, 2)
         )
-        btn_open_2.grid(row=0, column=1)
+        self.btn_open_2.grid(row=0, column=1)
 
         self.reset_img_1_canvas()
         self.reset_img_2_canvas()
@@ -371,7 +371,10 @@ class MainWindow(Frame):
         self.GLOBAL_VARS.LAST_NUM_LIST_FACE = 0
         self.GLOBAL_VARS.LAST_NUM_LIST_USER = 0
 
-    def onResetBtn(self):
+    def onResetBtn(self, *args):
+        if self.onQuest("Are you sure to reset?") == mbox.NO:
+            return
+
         self.GLOBAL_VARS.IMAGES = []
         self.GLOBAL_VARS.IMAGE_1 = None
         self.GLOBAL_VARS.IMAGE_2 = None
@@ -385,6 +388,9 @@ class MainWindow(Frame):
         self.initSeparators()
 
         self.output_size_label.configure(text="Output GIF resolution: None")
+
+        self.btn_open_1['state'] = 'normal'
+        self.btn_open_2['state'] = 'normal'
 
     def onStartBtn(self):
         if self.GLOBAL_VARS.IMAGE_1 is None or self.GLOBAL_VARS.IMAGE_2 is None:
@@ -726,6 +732,7 @@ class MainWindow(Frame):
 
         fileMenu = Menu(menubar)
 
+        fileMenu.add_command(label="New", underline=0, command=self.onResetBtn)
         fileMenu.add_command(label="Save as", underline=0, command=self.save_file)
         fileMenu.add_command(label="About", underline=0, command=self.onAbout)
         fileMenu.add_command(label="Exit", underline=0, command=self.onExit)
@@ -735,6 +742,7 @@ class MainWindow(Frame):
     def bindKeys(self):
         self.bind_all("<Control-q>", self.onExit)
         self.bind_all("<Control-s>", self.save_file)
+        self.bind_all("<Control-n>", self.onResetBtn)
 
     def reload_img_1_canvas(self, img):
         temp_np_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -1129,6 +1137,8 @@ class MainWindow(Frame):
                     self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
 
                     self.addCorners()
+                
+                self.btn_open_1['state'] = 'disabled'
             elif args[0] == 2:
                 self.GLOBAL_VARS.IMAGE_2 = cv2.imread(str(filepath))
 
@@ -1174,6 +1184,8 @@ class MainWindow(Frame):
 
                     self.addCorners()
 
+                self.btn_open_2['state'] = 'disabled'
+
     def save_file(self, *args):
         filepath = asksaveasfilename(
             defaultextension="gif",
@@ -1213,6 +1225,8 @@ class MainWindow(Frame):
         self.onInfo(ABOUT_TEXT)
 
     def onExit(self, *args):
+        if self.onQuest("Are you sure to exit?") == mbox.NO:
+            return
         self.quit()
 
     def onError(self, text):
