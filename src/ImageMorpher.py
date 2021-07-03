@@ -1,7 +1,6 @@
 import imageio
 import numpy as np
 import cv2
-import dlib
 from ImageResizer import resize, image_resize
 from imutils import face_utils
 
@@ -141,10 +140,34 @@ def processFrame(img1, img2, alpha, points1, points2):
 
     return np.uint8(imgMorph)
 
+def area(points):
+    n = len(points) 
+    a = 0
+
+    for i in range(n):
+        j = (i + 1) % n
+        a += abs(points[i][0] * points[j][1] - points[j][0] * points[i][1])
+
+    return 0.5 * a
+
+def getMaxAreaFace(landmarks):
+    max_area = -1
+    max_face = None
+    for face in landmarks:
+        a = area(face[0])
+        if a > max_area:
+            max_area = a
+            max_face = face[0]
+    return max_face        
+
 
 if __name__ == "__main__":
-    detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    haarcascade = "haarcascade_frontalface_alt2.xml"
+    LBFmodel = "lbfmodel.yaml"
+
+    detector = cv2.CascadeClassifier(haarcascade)
+    landmark_detector = cv2.face.createFacemarkLBF()
+    landmark_detector.loadModel(LBFmodel)
 
     filename1 = ""
     filename2 = ""
@@ -156,8 +179,8 @@ if __name__ == "__main__":
     img1 = cv2.imread(filename1)
     img2 = cv2.imread(filename2)
 
-    # img1 = image_resize(img1, height=800)
-    # img2 = image_resize(img2, height=800)
+    img1 = image_resize(img1, height=800)
+    img2 = image_resize(img2, height=800)
 
     new_shape = (max(img1.shape[0], img2.shape[0]), max(img1.shape[1], img2.shape[1]))
 
@@ -169,20 +192,19 @@ if __name__ == "__main__":
     gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
     gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 
+    faces1 = detector.detectMultiScale(gray1)
+    faces2 = detector.detectMultiScale(gray2)
+    _, landmarks1 = landmark_detector.fit(gray1, faces1)
+    _, landmarks2 = landmark_detector.fit(gray2, faces2)
+
     points1 = []
     points2 = []
 
-    # rects1 = detector(gray1, 1)[0]
-    # rects2 = detector(gray2, 1)[0]
+    points1 = getMaxAreaFace(landmarks1).tolist()
+    points2 = getMaxAreaFace(landmarks2).tolist()
 
-    # shape1 = predictor(gray1, rects1)
-    # shape2 = predictor(gray2, rects2)
-
-    # points1 = face_utils.shape_to_np(shape1).tolist()
-    # points2 = face_utils.shape_to_np(shape2).tolist()
-
-    # points1 = points1[:61]
-    # points2 = points2[:61]
+    points1 = points1[:61]
+    points2 = points2[:61]
 
     # CORNER POINTS1
     points1.append([img1.shape[1] - 1, 0])

@@ -10,7 +10,6 @@ from copy import deepcopy
 from functools import partial
 
 import cv2
-import dlib
 import imageio
 from imutils import face_utils
 from PIL import Image, ImageTk
@@ -21,7 +20,7 @@ from tkinter.ttk import Frame, Button, Scrollbar, Checkbutton, Entry, Label, Sep
 from tkinter import messagebox as mbox
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 
-from ImageMorpher import processFrame
+from ImageMorpher import getMaxAreaFace, processFrame
 from ImageResizer import image_resize, resize
 
 
@@ -78,16 +77,23 @@ class MainWindow(Frame):
 
         self.drawPoints()
 
-        self.detector = dlib.get_frontal_face_detector()
+        haarcascade = "haarcascade_frontalface_alt2.xml"
+        LBFmodel = "lbfmodel.yaml"
 
         pwd = os.path.abspath(os.path.dirname(__file__))
-        if os.path.isfile(os.path.join(pwd, "shape_predictor_68_face_landmarks.dat")):
-            self.predictor = dlib.shape_predictor(
-                os.path.join(pwd, "shape_predictor_68_face_landmarks.dat")
-            )
+        if os.path.isfile(os.path.join(pwd, haarcascade)):
+            self.detector = cv2.CascadeClassifier(os.path.join(pwd, haarcascade))
         else:
             self.onError(
-                "Could not find the following file: 'shape_predictor_68_face_landmarks.dat'. Download the file and relaunch the app!"
+                "Could not find the following file: {}. Download the file and relaunch the app!".format(haarcascade)
+            )
+            sys.exit(-1)
+        if os.path.isfile(os.path.join(pwd, LBFmodel)):
+            self.landmark_detector = cv2.face.createFacemarkLBF()
+            self.landmark_detector.loadModel(os.path.join(pwd, LBFmodel))
+        else:
+            self.onError(
+                "Could not find the following file: {}. Download the file and relaunch the app!".format(LBFmodel)
             )
             sys.exit(-1)
 
@@ -578,40 +584,18 @@ class MainWindow(Frame):
         gray1 = cv2.cvtColor(self.GLOBAL_VARS.IMAGE_1, cv2.COLOR_BGR2GRAY)
         gray2 = cv2.cvtColor(self.GLOBAL_VARS.IMAGE_2, cv2.COLOR_BGR2GRAY)
 
-        rects1 = self.detector(gray1, 1)
-        rects2 = self.detector(gray2, 1)
+        faces1 = self.detector.detectMultiScale(gray1)
+        faces2 = self.detector.detectMultiScale(gray2)
 
-        try:
-            rects1[0]
-            rects2[0]
-        except IndexError:
+        if len(faces1) == 0 or len(faces2) == 0:
             self.onError("No faces were found in one of the images!")
             return
 
-        max_area_1 = -1
-        max_shape_1 = None
-        for rect in rects1:
-            shape = self.predictor(gray1, rect)
-            shape = face_utils.shape_to_np(shape)
-            (x, y, w, h) = face_utils.rect_to_bb(rect)
-            area = (x + w) * (y + h)
-            if area > max_area_1:
-                max_area_1 = area
-                max_shape_1 = shape
+        _, landmarks1 = self.landmark_detector.fit(gray1, faces1)
+        _, landmarks2 = self.landmark_detector.fit(gray2, faces2)
 
-        max_area_2 = -1
-        max_shape_2 = None
-        for rect in rects2:
-            shape = self.predictor(gray2, rect)
-            shape = face_utils.shape_to_np(shape)
-            (x, y, w, h) = face_utils.rect_to_bb(rect)
-            area = (x + w) * (y + h)
-            if area > max_area_2:
-                max_area_2 = area
-                max_shape_2 = shape
-
-        points1 = max_shape_1.tolist()
-        points2 = max_shape_2.tolist()
+        points1 = getMaxAreaFace(landmarks1).astype(int).tolist()
+        points2 = getMaxAreaFace(landmarks2).astype(int).tolist()
 
         for i in range(61):
             self.add2PtsList(points1[i], points2[i], 1)
@@ -1221,7 +1205,7 @@ class MainWindow(Frame):
                 self.onError("Error occured while saving the file!")
 
     def onAbout(self):
-        ABOUT_TEXT = "Image Morphing, v0.1.0\nBy Dmitriy Okoneshnikov, 2021\nVisit website: https://magicwinnie.github.io"
+        ABOUT_TEXT = "Image Morphing, v0.2.0\nBy Dmitriy Okoneshnikov, 2021\nVisit website: https://magicwinnie.github.io"
         self.onInfo(ABOUT_TEXT)
 
     def onExit(self, *args):
