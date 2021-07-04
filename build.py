@@ -3,28 +3,26 @@ import sys
 import shutil
 import subprocess
 
-PY_FILE = "ImageMorphGUITK.py"
+
+PY_FILE = "ImageMorphGUITK"
 haarcascade = "haarcascade_frontalface_alt2.xml"
 LBFmodel = "lbfmodel.yaml"
 
-if not os.path.isfile(os.path.join("src", PY_FILE)):
-    print("[ERROR] %s not found." % os.path.join("src", PY_FILE))
+
+if not os.path.isfile(os.path.join("src", PY_FILE + ".py")):
+    print("[ERROR] %s not found." % os.path.join("src", PY_FILE + ".py"))
     sys.exit(-1)
 
-try:
-    print("[INFO] Trying to delete %s ..." % PY_FILE.replace(".py", ""))
-    shutil.rmtree(PY_FILE.replace(".py", ""))
-except FileNotFoundError:
-    print("[INFO] %s does not exist." % PY_FILE.replace(".py", ""))
 
-try:
-    print(
-        "[INFO] Trying to delete %s-%s.zip ..."
-        % (PY_FILE.replace(".py", ""), "Windows")
-    )
-    os.remove("%s-%s.zip" % (PY_FILE.replace(".py", ""), "Windows"))
-except FileNotFoundError:
-    print("[INFO] %s-%s.zip does not exist." % (PY_FILE.replace(".py", ""), "Windows"))
+print("[INFO] Trying to delete files from the last build...")
+if os.path.isdir(PY_FILE):
+    shutil.rmtree(PY_FILE)
+if os.path.isdir("dist"):
+    shutil.rmtree("dist")
+if os.path.isdir("build"):
+    shutil.rmtree("build")
+if os.path.isfile("%s-%s.zip" % (PY_FILE, "Windows")):
+    os.remove("%s-%s.zip" % (PY_FILE, "Windows"))
 
 
 print("[INFO] Running pyinstaller...")
@@ -33,28 +31,25 @@ try:
         [
             "pyinstaller.exe",
             "--windowed",
+            "--icon=icon.ico",
             "--distpath",
             ".",
-            os.path.join("src", PY_FILE),
+            os.path.join("src", PY_FILE + ".py"),
         ],
         check=True,
     )
 except subprocess.CalledProcessError:
     print("[ERROR] Unknown error.")
+    exit(-1)
 
-PY_FILE = PY_FILE.replace(".py", "")
 
-try:
-    print("[INFO] Trying to delete build/ ...")
-    shutil.rmtree("build/")
-except FileNotFoundError:
-    print("[INFO] build/ does not exist.")
-try:
-    print("[INFO] Trying to delete %s.spec..." % PY_FILE)
+if os.path.isdir("dist"):
+    shutil.rmtree("dist")
+if os.path.isdir("build"):
+    shutil.rmtree("build")
+if os.path.isfile("%s.spec" % PY_FILE):
     os.remove("%s.spec" % PY_FILE)
-except FileNotFoundError:
-    print("[INFO] %s.spec does not exist." % PY_FILE)
-    pass
+
 
 print("[INFO] Copying %s ..." % haarcascade)
 shutil.copyfile(
@@ -66,6 +61,15 @@ shutil.copyfile(
     os.path.join("src", LBFmodel),
     os.path.join(PY_FILE, LBFmodel),
 )
+print("[INFO] Copying %s ..." % "icon.ico")
+shutil.copyfile(
+    "icon.ico",
+    os.path.join(PY_FILE, "icon.ico"),
+)
+
+
 print("[INFO] Making an archive from %s ..." % PY_FILE)
 shutil.make_archive("%s-%s" % (PY_FILE, "Windows"), "zip", PY_FILE)
-print("[INFO] Done.")
+
+
+print("[INFO] Done")

@@ -1,7 +1,7 @@
 # Image Morphing
 ## Dependencies
 1. `pip install -r requirements.txt`
-2. `python download_shape_predictor.py`
+2. `python download_files.py`
 ## Build
 * `python build.py`  
 ## Usage

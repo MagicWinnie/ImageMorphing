@@ -158,7 +158,7 @@ def getMaxAreaFace(landmarks):
         if a > max_area:
             max_area = a
             max_face = face[0]
-    return max_face        
+    return max_face
 
 
 if __name__ == "__main__":

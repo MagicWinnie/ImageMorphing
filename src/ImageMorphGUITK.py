@@ -7,7 +7,6 @@ import getpass
 import platform
 from pathlib import Path
 from copy import deepcopy
-from functools import partial
 
 import cv2
 import imageio
@@ -106,12 +105,12 @@ class MainWindow(Frame):
         self.grid()
 
         self.btn_open_1 = Button(
-            self, text="Open Image #1", command=partial(self.open_file, 1)
+            self, text="Open Image #1", command=self.open_file_1
         )
         self.btn_open_1.grid(row=0, column=0)
 
         self.btn_open_2 = Button(
-            self, text="Open Image #2", command=partial(self.open_file, 2)
+            self, text="Open Image #2", command=self.open_file_2
         )
         self.btn_open_2.grid(row=0, column=1)
 
@@ -320,6 +319,25 @@ class MainWindow(Frame):
             column=0, row=3, columnspan=4, sticky="ewn"
         )
 
+    def initMenu(self):
+        menubar = Menu(self.master)
+        self.master.config(menu=menubar)
+
+        fileMenu = Menu(menubar)
+
+        fileMenu.add_command(label="New", underline=0, command=self.onResetBtn)
+        fileMenu.add_command(label="Save as", underline=0, command=self.save_file)
+        fileMenu.add_command(label="About", underline=0, command=self.onAbout)
+        fileMenu.add_command(label="Exit", underline=0, command=self.onExit)
+
+        menubar.add_cascade(label="File", underline=0, menu=fileMenu)
+
+    def bindKeys(self):
+        self.bind_all("<Control-q>", self.onExit)
+        self.bind_all("<Control-s>", self.save_file)
+        self.bind_all("<Control-n>", self.onResetBtn)
+    
+    ### POINT METHODS
     def add2PtsList(self, pt1, pt2, t):
         if t == 0:
             self.corner_points_list.insert(
@@ -381,8 +399,72 @@ class MainWindow(Frame):
         self.GLOBAL_VARS.LAST_NUM_LIST_FACE = 0
         self.GLOBAL_VARS.LAST_NUM_LIST_USER = 0
 
+    def addCorners(self):
+        self.corner_points_list.delete(0, END)
+        self.GLOBAL_VARS.CORNER_POINTS_1 = []
+        self.GLOBAL_VARS.CORNER_POINTS_2 = []
+        self.GLOBAL_VARS.LAST_NUM_LIST_CORNER = 0
+
+        self.add2PtsList(
+            [self.GLOBAL_VARS.IMAGE_1.shape[1] - 1, 0],
+            [self.GLOBAL_VARS.IMAGE_2.shape[1] - 1, 0],
+            0,
+        )
+        self.add2PtsList(
+            [
+                self.GLOBAL_VARS.IMAGE_1.shape[1] - 1,
+                self.GLOBAL_VARS.IMAGE_1.shape[0] - 1,
+            ],
+            [
+                self.GLOBAL_VARS.IMAGE_2.shape[1] - 1,
+                self.GLOBAL_VARS.IMAGE_2.shape[0] - 1,
+            ],
+            0,
+        )
+        self.add2PtsList(
+            [0, self.GLOBAL_VARS.IMAGE_1.shape[0] - 1],
+            [0, self.GLOBAL_VARS.IMAGE_2.shape[0] - 1],
+            0,
+        )
+        self.add2PtsList([0, 0], [0, 0], 0)
+
+        self.add2PtsList(
+            [self.GLOBAL_VARS.IMAGE_1.shape[1] // 2 - 1, 0],
+            [self.GLOBAL_VARS.IMAGE_2.shape[1] // 2 - 1, 0],
+            0,
+        )
+        self.add2PtsList(
+            [0, self.GLOBAL_VARS.IMAGE_1.shape[0] // 2 - 1],
+            [0, self.GLOBAL_VARS.IMAGE_2.shape[0] // 2 - 1],
+            0,
+        )
+        self.add2PtsList(
+            [
+                self.GLOBAL_VARS.IMAGE_1.shape[1] // 2 - 1,
+                self.GLOBAL_VARS.IMAGE_1.shape[0] - 1,
+            ],
+            [
+                self.GLOBAL_VARS.IMAGE_2.shape[1] // 2 - 1,
+                self.GLOBAL_VARS.IMAGE_2.shape[0] - 1,
+            ],
+            0,
+        )
+        self.add2PtsList(
+            [
+                self.GLOBAL_VARS.IMAGE_1.shape[1] - 1,
+                self.GLOBAL_VARS.IMAGE_1.shape[0] // 2 - 1,
+            ],
+            [
+                self.GLOBAL_VARS.IMAGE_2.shape[1] - 1,
+                self.GLOBAL_VARS.IMAGE_2.shape[0] // 2 - 1,
+            ],
+            0,
+        )
+    ### ------------
+
+    ### BUTTON METHODS
     def onResetBtn(self, *args):
-        if self.onQuest("Are you sure to reset?") == mbox.NO:
+        if self.onQuest("Do you want to reset?") == mbox.NO:
             return
 
         self.GLOBAL_VARS.IMAGES = []
@@ -528,68 +610,6 @@ class MainWindow(Frame):
             )
         )
 
-    def addCorners(self):
-        self.corner_points_list.delete(0, END)
-        self.GLOBAL_VARS.CORNER_POINTS_1 = []
-        self.GLOBAL_VARS.CORNER_POINTS_2 = []
-        self.GLOBAL_VARS.LAST_NUM_LIST_CORNER = 0
-
-        self.add2PtsList(
-            [self.GLOBAL_VARS.IMAGE_1.shape[1] - 1, 0],
-            [self.GLOBAL_VARS.IMAGE_2.shape[1] - 1, 0],
-            0,
-        )
-        self.add2PtsList(
-            [
-                self.GLOBAL_VARS.IMAGE_1.shape[1] - 1,
-                self.GLOBAL_VARS.IMAGE_1.shape[0] - 1,
-            ],
-            [
-                self.GLOBAL_VARS.IMAGE_2.shape[1] - 1,
-                self.GLOBAL_VARS.IMAGE_2.shape[0] - 1,
-            ],
-            0,
-        )
-        self.add2PtsList(
-            [0, self.GLOBAL_VARS.IMAGE_1.shape[0] - 1],
-            [0, self.GLOBAL_VARS.IMAGE_2.shape[0] - 1],
-            0,
-        )
-        self.add2PtsList([0, 0], [0, 0], 0)
-
-        self.add2PtsList(
-            [self.GLOBAL_VARS.IMAGE_1.shape[1] // 2 - 1, 0],
-            [self.GLOBAL_VARS.IMAGE_2.shape[1] // 2 - 1, 0],
-            0,
-        )
-        self.add2PtsList(
-            [0, self.GLOBAL_VARS.IMAGE_1.shape[0] // 2 - 1],
-            [0, self.GLOBAL_VARS.IMAGE_2.shape[0] // 2 - 1],
-            0,
-        )
-        self.add2PtsList(
-            [
-                self.GLOBAL_VARS.IMAGE_1.shape[1] // 2 - 1,
-                self.GLOBAL_VARS.IMAGE_1.shape[0] - 1,
-            ],
-            [
-                self.GLOBAL_VARS.IMAGE_2.shape[1] // 2 - 1,
-                self.GLOBAL_VARS.IMAGE_2.shape[0] - 1,
-            ],
-            0,
-        )
-        self.add2PtsList(
-            [
-                self.GLOBAL_VARS.IMAGE_1.shape[1] - 1,
-                self.GLOBAL_VARS.IMAGE_1.shape[0] // 2 - 1,
-            ],
-            [
-                self.GLOBAL_VARS.IMAGE_2.shape[1] - 1,
-                self.GLOBAL_VARS.IMAGE_2.shape[0] // 2 - 1,
-            ],
-            0,
-        )
-
     def onFaceRecBtn(self):
         if self.GLOBAL_VARS.IMAGE_1 is None or self.GLOBAL_VARS.IMAGE_2 is None:
             self.onError("One of the images is not chosen!")
@@ -621,7 +641,9 @@ class MainWindow(Frame):
 
         for i in range(61):
             self.add2PtsList(points1[i], points2[i], 1)
+    ### ------------
 
+    ### ENTRY METHODS
     def onEntryEditCropped(self):
         if self.reversed_var.get() == 1:
             self.GLOBAL_VARS.CROPPED = True
@@ -731,25 +753,9 @@ class MainWindow(Frame):
             self.duration_input.delete(self.duration_input.index("end"))
             self.duration_input.config(validate="key")
             return False
+    ### ------------
 
-    def initMenu(self):
-        menubar = Menu(self.master)
-        self.master.config(menu=menubar)
-
-        fileMenu = Menu(menubar)
-
-        fileMenu.add_command(label="New", underline=0, command=self.onResetBtn)
-        fileMenu.add_command(label="Save as", underline=0, command=self.save_file)
-        fileMenu.add_command(label="About", underline=0, command=self.onAbout)
-        fileMenu.add_command(label="Exit", underline=0, command=self.onExit)
-
-        menubar.add_cascade(label="File", underline=0, menu=fileMenu)
-
-    def bindKeys(self):
-        self.bind_all("<Control-q>", self.onExit)
-        self.bind_all("<Control-s>", self.save_file)
-        self.bind_all("<Control-n>", self.onResetBtn)
-
+    ### CANVAS RELOAD AND RESET METHODS
     def reload_img_1_canvas(self, img):
         temp_np_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
@@ -800,6 +806,25 @@ class MainWindow(Frame):
         )
         self.img_canvas_2.grid(row=1, column=1, sticky="news")
 
+    def reset_img_1_canvas(self):
+        self.img_canvas_1 = Canvas(
+            self,
+            width=self.GLOBAL_VARS.IMG_MAX_WIDTH,
+            height=self.GLOBAL_VARS.IMG_MAX_HEIGHT,
+        )
+        self.img_canvas_1.bind("<Button-1>", self.onImg1Click)
+        self.img_canvas_1.grid(row=1, column=0, sticky="news")
+
+    def reset_img_2_canvas(self):
+        self.img_canvas_2 = Canvas(
+            self,
+            width=self.GLOBAL_VARS.IMG_MAX_WIDTH,
+            height=self.GLOBAL_VARS.IMG_MAX_HEIGHT,
+        )
+        self.img_canvas_2.bind("<Button-1>", self.onImg2Click)
+        self.img_canvas_2.grid(row=1, column=1, sticky="news")
+    ### ------------
+
     def get_extreme_points(self, n):
         if n == 1:
             left_cor = min(self.GLOBAL_VARS.CORNER_POINTS_1, key=lambda p: p[0])
@@ -843,41 +868,6 @@ class MainWindow(Frame):
             bottom = max(bottom_cor, bottom_face, bottom_user)
 
         return (left, right, top, bottom)
-
-    def update_gif_viewer(self, ind):
-        if not self.GLOBAL_VARS.DO_ANIMATION:
-            return
-
-        if len(self.GLOBAL_VARS.IMAGES) != 0:
-            frame = self.GLOBAL_VARS.IMAGES[ind]
-
-            ind += 1
-            if ind == len(self.GLOBAL_VARS.IMAGES):
-                ind = 0
-
-            if frame.shape[0] > frame.shape[1]:
-                frame = image_resize(frame, height=self.GLOBAL_VARS.IMG_MAX_HEIGHT)
-            else:
-                frame = image_resize(frame, width=self.GLOBAL_VARS.IMG_MAX_WIDTH)
-
-            img_PIL = Image.fromarray(frame)
-            self.GLOBAL_VARS.CURR_FRAME = ImageTk.PhotoImage(img_PIL)
-
-            self.gif_canvas.create_image(
-                frame.shape[1] // 2 + 2,
-                frame.shape[0] // 2 + 2,
-                image=self.GLOBAL_VARS.CURR_FRAME,
-            )
-            self.gif_canvas.config(width=frame.shape[1] + 5, height=frame.shape[0] + 5)
-            self.gif_canvas.grid(row=1, column=3, columnspan=2, sticky="news")
-        else:
-            self.reset_gif_viewer()
-        if self.GLOBAL_VARS.DURATION is None or self.GLOBAL_VARS.DURATION == 0.0:
-            self.after(150, self.update_gif_viewer, ind)
-        else:
-            self.after(
-                int(self.GLOBAL_VARS.DURATION * 1000), self.update_gif_viewer, ind
-            )
 
     def onImg1Click(self, event):
         if self.GLOBAL_VARS.IMAGE_1 is None or self.GLOBAL_VARS.IMAGE_2 is None:
@@ -1055,23 +1045,45 @@ class MainWindow(Frame):
 
         self.after(150, self.drawPoints)
 
-    def reset_img_1_canvas(self):
-        self.img_canvas_1 = Canvas(
-            self,
-            width=self.GLOBAL_VARS.IMG_MAX_WIDTH,
-            height=self.GLOBAL_VARS.IMG_MAX_HEIGHT,
-        )
-        self.img_canvas_1.bind("<Button-1>", self.onImg1Click)
-        self.img_canvas_1.grid(row=1, column=0, sticky="news")
 
-    def reset_img_2_canvas(self):
-        self.img_canvas_2 = Canvas(
-            self,
-            width=self.GLOBAL_VARS.IMG_MAX_WIDTH,
-            height=self.GLOBAL_VARS.IMG_MAX_HEIGHT,
-        )
-        self.img_canvas_2.bind("<Button-1>", self.onImg2Click)
-        self.img_canvas_2.grid(row=1, column=1, sticky="news")
+    ### GIF VIEWER METHODS
+    def update_gif_viewer(self, ind):
+        """
+        Timer that shows the animation
+        """
+        if not self.GLOBAL_VARS.DO_ANIMATION:
+            return
+
+        if len(self.GLOBAL_VARS.IMAGES) != 0:
+            frame = self.GLOBAL_VARS.IMAGES[ind]
+
+            ind += 1
+            if ind == len(self.GLOBAL_VARS.IMAGES):
+                ind = 0
+
+            if frame.shape[0] > frame.shape[1]:
+                frame = image_resize(frame, height=self.GLOBAL_VARS.IMG_MAX_HEIGHT)
+            else:
+                frame = image_resize(frame, width=self.GLOBAL_VARS.IMG_MAX_WIDTH)
+
+            img_PIL = Image.fromarray(frame)
+            self.GLOBAL_VARS.CURR_FRAME = ImageTk.PhotoImage(img_PIL)
+
+            self.gif_canvas.create_image(
+                frame.shape[1] // 2 + 2,
+                frame.shape[0] // 2 + 2,
+                image=self.GLOBAL_VARS.CURR_FRAME,
+            )
+            self.gif_canvas.config(width=frame.shape[1] + 5, height=frame.shape[0] + 5)
+            self.gif_canvas.grid(row=1, column=3, columnspan=2, sticky="news")
+        else:
+            self.reset_gif_viewer()
+        if self.GLOBAL_VARS.DURATION is None or self.GLOBAL_VARS.DURATION == 0.0:
+            self.after(150, self.update_gif_viewer, ind)
+        else:
+            self.after(
+                int(self.GLOBAL_VARS.DURATION * 1000), self.update_gif_viewer, ind
+            )
 
     def reset_gif_viewer(self):
         self.gif_canvas = Canvas(self, width=350, height=350)
@@ -1084,8 +1096,15 @@ class MainWindow(Frame):
 
     def stop_gif_viewer(self):
         self.GLOBAL_VARS.DO_ANIMATION = False
+    ### ------------
 
-    def open_file(self, *args):
+    ### FILE METHODS
+    def open_file_1(self, *args):
+        """
+        Function to open a file
+        Executed on `self.btn_open_1` press
+        If there is a valid file it opens, resizes the image and adds corner points
+        """
         filepath = askopenfilename(
             filetypes=[("Image files", "*.jpg *.jpeg *.png *.gif *.tiff")],
             initialdir=self.GLOBAL_VARS.LAST_OPEN_PATH,
@@ -1096,103 +1115,126 @@ class MainWindow(Frame):
 
         self.GLOBAL_VARS.LAST_OPEN_PATH = filepath.resolve().parent
 
-        if len(args) == 1:
-            self.GLOBAL_VARS.IMAGES = []
-            self.deleteListPts()
-            self.deleteAllPts()
+        self.GLOBAL_VARS.IMAGES = []
+        self.deleteListPts()
+        self.deleteAllPts()
 
-            if args[0] == 1:
-                self.GLOBAL_VARS.IMAGE_1 = cv2.imread(str(filepath))
+        self.GLOBAL_VARS.IMAGE_1 = cv2.imread(str(filepath))
 
-                if self.GLOBAL_VARS.IMAGE_1 is None:
-                    self.onError("Could not open the image!")
-                    self.reset_img_1_canvas()
-                    return
-                if (
-                    self.GLOBAL_VARS.IMAGE_1.shape[0] > 6000
-                    or self.GLOBAL_VARS.IMAGE_1.shape[1] > 6000
-                ):
-                    self.onError(
-                        "One of the dimensions of the first image is larger than 4000 px.\nThis can lead to serious memory problems.\nReverting..."
-                    )
-                    self.reset_img_1_canvas()
-                    return
+        if self.GLOBAL_VARS.IMAGE_1 is None:
+            self.onError("Could not open the image!")
+            self.reset_img_1_canvas()
+            return
+        if (
+            self.GLOBAL_VARS.IMAGE_1.shape[0] > 6000
+            or self.GLOBAL_VARS.IMAGE_1.shape[1] > 6000
+        ):
+            self.onError(
+                "One of the dimensions of the first image is larger than 4000 px.\nThis can lead to serious memory problems.\nReverting..."
+            )
+            self.reset_img_1_canvas()
+            return
 
-                if self.GLOBAL_VARS.IMAGE_2 is None:
-                    self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
-                else:
-                    new_shape = (
-                        max(
-                            self.GLOBAL_VARS.IMAGE_1.shape[0],
-                            self.GLOBAL_VARS.IMAGE_2.shape[0],
-                        ),
-                        max(
-                            self.GLOBAL_VARS.IMAGE_1.shape[1],
-                            self.GLOBAL_VARS.IMAGE_2.shape[1],
-                        ),
-                    )
+        if self.GLOBAL_VARS.IMAGE_2 is None:
+            self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
+        else:
+            new_shape = (
+                max(
+                    self.GLOBAL_VARS.IMAGE_1.shape[0],
+                    self.GLOBAL_VARS.IMAGE_2.shape[0],
+                ),
+                max(
+                    self.GLOBAL_VARS.IMAGE_1.shape[1],
+                    self.GLOBAL_VARS.IMAGE_2.shape[1],
+                ),
+            )
 
-                    self.GLOBAL_VARS.IMAGE_1 = resize(
-                        self.GLOBAL_VARS.IMAGE_1, new_shape, True
-                    )
-                    self.GLOBAL_VARS.IMAGE_2 = resize(
-                        self.GLOBAL_VARS.IMAGE_2, new_shape, True
-                    )
+            self.GLOBAL_VARS.IMAGE_1 = resize(
+                self.GLOBAL_VARS.IMAGE_1, new_shape, True
+            )
+            self.GLOBAL_VARS.IMAGE_2 = resize(
+                self.GLOBAL_VARS.IMAGE_2, new_shape, True
+            )
 
-                    self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
-                    self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
+            self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
+            self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
 
-                    self.addCorners()
+            self.addCorners()
 
-                self.btn_open_1["state"] = "disabled"
-            elif args[0] == 2:
-                self.GLOBAL_VARS.IMAGE_2 = cv2.imread(str(filepath))
+        self.btn_open_1["state"] = "disabled"
 
-                if self.GLOBAL_VARS.IMAGE_2 is None:
-                    self.onError("Could not open the image!")
+    def open_file_2(self, *args):
+        """
+        Function to open a file
+        Executed on `self.btn_open_2` press
+        If there is a valid file it opens, resizes the image and adds corner points
+        """
+        filepath = askopenfilename(
+            filetypes=[("Image files", "*.jpg *.jpeg *.png *.gif *.tiff")],
+            initialdir=self.GLOBAL_VARS.LAST_OPEN_PATH,
+        )
+        if not filepath:
+            return
+        filepath = Path(filepath)
 
-                    self.reset_img_2_canvas()
-                    return
-                if (
-                    self.GLOBAL_VARS.IMAGE_2.shape[0] > 6000
-                    or self.GLOBAL_VARS.IMAGE_2.shape[1] > 6000
-                ):
-                    self.onError(
-                        "One of the dimensions of the second image is larger than 4000 px.\nThis can lead to serious memory problems.\nReverting..."
-                    )
+        self.GLOBAL_VARS.LAST_OPEN_PATH = filepath.resolve().parent
 
-                    self.reset_img_2_canvas()
-                    return
+        self.GLOBAL_VARS.IMAGES = []
+        self.deleteListPts()
+        self.deleteAllPts()
 
-                if self.GLOBAL_VARS.IMAGE_1 is None:
-                    self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
-                else:
-                    new_shape = (
-                        max(
-                            self.GLOBAL_VARS.IMAGE_1.shape[0],
-                            self.GLOBAL_VARS.IMAGE_2.shape[0],
-                        ),
-                        max(
-                            self.GLOBAL_VARS.IMAGE_1.shape[1],
-                            self.GLOBAL_VARS.IMAGE_2.shape[1],
-                        ),
-                    )
+        self.GLOBAL_VARS.IMAGE_2 = cv2.imread(str(filepath))
 
-                    self.GLOBAL_VARS.IMAGE_1 = resize(
-                        self.GLOBAL_VARS.IMAGE_1, new_shape, True
-                    )
-                    self.GLOBAL_VARS.IMAGE_2 = resize(
-                        self.GLOBAL_VARS.IMAGE_2, new_shape, True
-                    )
+        if self.GLOBAL_VARS.IMAGE_2 is None:
+            self.onError("Could not open the image!")
 
-                    self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
-                    self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
+            self.reset_img_2_canvas()
+            return
+        if (
+            self.GLOBAL_VARS.IMAGE_2.shape[0] > 6000
+            or self.GLOBAL_VARS.IMAGE_2.shape[1] > 6000
+        ):
+            self.onError(
+                "One of the dimensions of the second image is larger than 4000 px.\nThis can lead to serious memory problems.\nReverting..."
+            )
 
-                    self.addCorners()
+            self.reset_img_2_canvas()
+            return
 
-                self.btn_open_2["state"] = "disabled"
+        if self.GLOBAL_VARS.IMAGE_1 is None:
+            self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
+        else:
+            new_shape = (
+                max(
+                    self.GLOBAL_VARS.IMAGE_1.shape[0],
+                    self.GLOBAL_VARS.IMAGE_2.shape[0],
+                ),
+                max(
+                    self.GLOBAL_VARS.IMAGE_1.shape[1],
+                    self.GLOBAL_VARS.IMAGE_2.shape[1],
+                ),
+            )
+
+            self.GLOBAL_VARS.IMAGE_1 = resize(
+                self.GLOBAL_VARS.IMAGE_1, new_shape, True
+            )
+            self.GLOBAL_VARS.IMAGE_2 = resize(
+                self.GLOBAL_VARS.IMAGE_2, new_shape, True
+            )
+
+            self.reload_img_1_canvas(self.GLOBAL_VARS.IMAGE_1)
+            self.reload_img_2_canvas(self.GLOBAL_VARS.IMAGE_2)
+
+            self.addCorners()
+
+        self.btn_open_2["state"] = "disabled"
 
     def save_file(self, *args):
+        """
+        Function to save a file
+        Executed on <Control+s>, `self.save_btn`, `Save As` press
+        If there is an animation it resizes frames and saves the gif file
+        """
         filepath = asksaveasfilename(
             defaultextension="gif",
             filetypes=[("Graphics Interchange Format", "*.gif")],
@@ -1225,13 +1267,15 @@ class MainWindow(Frame):
                 )
             except:
                 self.onError("Error occured while saving the file!")
-
+    ### ------------
+    
+    ### MESSAGE BOX METHODS
     def onAbout(self):
         ABOUT_TEXT = "Image Morphing, v0.2.0\nBy Dmitriy Okoneshnikov, 2021\nVisit website: https://magicwinnie.github.io"
         self.onInfo(ABOUT_TEXT)
 
     def onExit(self, *args):
-        if self.onQuest("Are you sure to exit?") == mbox.NO:
+        if self.onQuest("Do you want to exit?") == mbox.NO:
             return
         self.quit()
 
@@ -1246,6 +1290,7 @@ class MainWindow(Frame):
 
     def onInfo(self, text):
         mbox.showinfo("Information", text)
+    ### ------------
 
 
 def main():
@@ -1255,6 +1300,7 @@ def main():
     width = root.winfo_screenwidth()
     height = root.winfo_screenheight()
     root.geometry("%dx%d" % (int(width * 0.75), int(height * 0.85)))
+    root.iconbitmap('icon.ico')
     root.mainloop()
 
 
